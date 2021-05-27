@@ -19,25 +19,24 @@ const dropTables = async () => {
   };
 };
 
-const buildTables = async () => {
+const createTables = async () => {
   try {
     console.log('Building tables...');
-
     await client.query(`
       CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        "displayName" VARCHAR(255) NOT NULL,
-      )
+        "displayName" VARCHAR(255) NOT NULL
+      );
     `)
-  
+
     await client.query(`
       CREATE TABLE storage_locations (
         id SERIAL PRIMARY KEY,
         "userId" INTEGER REFERENCES users(id),
         name VARCHAR(255) UNIQUE NOT NULL,
-        location VARCHAR(255) NOT NULL DEFAULT 'Home',
+        location VARCHAR(255) DEFAULT 'Home'
       );
     `)
 
@@ -48,7 +47,7 @@ const buildTables = async () => {
         name VARCHAR(255) UNIQUE NOT NULL,
         description VARCHAR(255) NOT NULL,
         category VARCHAR(255) DEFAULT 'MISC',
-        "imageURL" VARCHAR(255),
+        "imageURL" VARCHAR(255)
       );
     `);
 
@@ -57,8 +56,8 @@ const buildTables = async () => {
         id SERIAL PRIMARY KEY,
         "userId" INTEGER REFERENCES users(id),
         label VARCHAR(255) UNIQUE NOT NULL,
-        type VARCHAR(255) NOT NULL DEFAULT 'Box(small)',
-        "locationId" INTEGER REFERENCES storage_locations(id),
+        type VARCHAR(255) DEFAULT 'Box(small)',
+        "locationId" INTEGER REFERENCES storage_locations(id)
       );
     `);
 
@@ -67,7 +66,7 @@ const buildTables = async () => {
         id SERIAL PRIMARY KEY,
         "userId" INTEGER REFERENCES users(id),
         "boxId" INTEGER REFERENCES boxes(id),
-        "itemId" INTEGER REFERENCES items(id),
+        "itemId" INTEGER REFERENCES items(id)
       );
     `);
 
