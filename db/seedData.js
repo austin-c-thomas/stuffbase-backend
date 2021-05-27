@@ -1,9 +1,10 @@
 const client = require('./client');
 
+const { createUser } = require('./adapters/users');
+
 const dropTables = async () => {
   try {
     console.log('Dropping tables...');
-
     await client.query(`
       DROP TABLE IF EXISTS box_items;
       DROP TABLE IF EXISTS boxes;
@@ -77,11 +78,26 @@ const createTables = async () => {
   };
 };
 
+const createInitialUsers = async () => {
+  try {
+    console.log('Creating initial users...');
+    await createUser({
+      email: 'austinthomas.dev@gmail.com',
+      password: '12345678',
+      displayName: 'Aus and Ash',
+    });
+  } catch (error) {
+    console.error('Error creating initial users.');
+    throw error;
+  };
+};
+
 const rebuildDB = async () => {
   try {
     client.connect();
     await dropTables();
     await createTables();
+    await createInitialUsers();
   } catch (error) {
     console.error('Error during rebuildDB.');
     throw error;
