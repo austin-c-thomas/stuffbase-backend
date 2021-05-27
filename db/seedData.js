@@ -9,6 +9,7 @@ const dropTables = async () => {
       DROP TABLE IF EXISTS boxes;
       DROP TABLE IF EXISTS items;
       DROP TABLE IF EXISTS storage_locations;
+      DROP TABLE IF EXISTS users;
     `);
 
     console.log('Finished dropping tables.');
@@ -23,8 +24,27 @@ const buildTables = async () => {
     console.log('Building tables...');
 
     await client.query(`
+      CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        "displayName" VARCHAR(255) NOT NULL,
+      )
+    `)
+  
+    await client.query(`
+      CREATE TABLE storage_locations (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER REFERENCES users(id),
+        name VARCHAR(255) UNIQUE NOT NULL,
+        location VARCHAR(255) NOT NULL DEFAULT 'Home',
+      );
+    `)
+
+    await client.query(`
       CREATE TABLE items (
         id SERIAL PRIMARY KEY,
+        "userId" INTEGER REFERENCES users(id),
         name VARCHAR(255) UNIQUE NOT NULL,
         description VARCHAR(255) NOT NULL,
         category VARCHAR(255) DEFAULT 'MISC',
@@ -33,16 +53,9 @@ const buildTables = async () => {
     `);
 
     await client.query(`
-      CREATE TABLE storage_locations (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) UNIQUE NOT NULL,
-        location VARCHAR(255) NOT NULL DEFAULT 'Home',
-      );
-    `)
-
-    await client.query(`
       CREATE TABLE boxes (
         id SERIAL PRIMARY KEY,
+        "userId" INTEGER REFERENCES users(id),
         label VARCHAR(255) UNIQUE NOT NULL,
         type VARCHAR(255) NOT NULL DEFAULT 'Box(small)',
         "locationId" INTEGER REFERENCES storage_locations(id),
@@ -52,6 +65,7 @@ const buildTables = async () => {
     await client.query(`
       CREATE TABLE box_items (
         id SERIAL PRIMARY KEY,
+        "userId" INTEGER REFERENCES users(id),
         "boxId" INTEGER REFERENCES boxes(id),
         "itemId" INTEGER REFERENCES items(id),
       );
@@ -62,4 +76,19 @@ const buildTables = async () => {
     console.error('Error building tables.');
     throw error;
   };
+};
+
+const rebuildDB = async () => {
+  try {
+    client.connect();
+    await dropTables();
+    await createTables();
+  } catch (error) {
+    console.error('Error during rebuildDB.');
+    throw error;
+  };
+};
+
+module.exports = {
+  rebuildDB,
 };
