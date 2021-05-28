@@ -7,8 +7,8 @@ const dropTables = async () => {
     console.log('Dropping tables...');
     await client.query(`
       DROP TABLE IF EXISTS box_items;
-      DROP TABLE IF EXISTS boxes;
       DROP TABLE IF EXISTS items;
+      DROP TABLE IF EXISTS boxes;
       DROP TABLE IF EXISTS storage_locations;
       DROP TABLE IF EXISTS users;
     `);
@@ -42,20 +42,8 @@ const createTables = async () => {
     `)
 
     await client.query(`
-      CREATE TABLE items (
-        id SERIAL PRIMARY KEY,
-        "userId" INTEGER REFERENCES users(id),
-        name VARCHAR(255) UNIQUE NOT NULL,
-        description VARCHAR(255) NOT NULL,
-        category VARCHAR(255) DEFAULT 'MISC',
-        "imageURL" VARCHAR(255)
-      );
-    `);
-
-    await client.query(`
       CREATE TABLE boxes (
         id SERIAL PRIMARY KEY,
-        "userId" INTEGER REFERENCES users(id),
         label VARCHAR(255) UNIQUE NOT NULL,
         type VARCHAR(255) DEFAULT 'Box(small)',
         "locationId" INTEGER REFERENCES storage_locations(id)
@@ -63,9 +51,19 @@ const createTables = async () => {
     `);
 
     await client.query(`
+    CREATE TABLE items (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) UNIQUE NOT NULL,
+      description VARCHAR(255) NOT NULL,
+      category VARCHAR(255) DEFAULT 'MISC',
+      "imageURL" VARCHAR(255),
+      "locationId" INTEGER REFERENCES storage_locations(id)
+    );
+  `);
+
+    await client.query(`
       CREATE TABLE box_items (
         id SERIAL PRIMARY KEY,
-        "userId" INTEGER REFERENCES users(id),
         "boxId" INTEGER REFERENCES boxes(id),
         "itemId" INTEGER REFERENCES items(id)
       );
