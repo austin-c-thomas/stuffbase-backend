@@ -107,7 +107,7 @@ const updateUser = async ({ id, email, password }) => {
     return user;
   };
 
-  // If one of them is different, must be re-encrypted
+  // If a field has changed, it must be re-encrypted before updated the DB
   const updateFields = {};
   const SALT_COUNT = 10;
   let newHashedEmail;
@@ -123,6 +123,7 @@ const updateUser = async ({ id, email, password }) => {
     updateFields.password = newHashedPassword;
   };
 
+  // Only update the fields that have changed
   const setString = Object.keys(updateFields).map((key, index) => {
     return `"${key}"=$${index + 1}`
   }).join(', ');
