@@ -1,14 +1,7 @@
 const client = require('../client');
 const bcrypt = require('bcrypt');
 
-const checkPasswordStrength = (password) => {
-  if (password.length < 8) {
-    
-  }
-}
-
 const createUser = async ({ email, password, displayName }) => {
-
   // Password strength checker
   if (password.length < 8) {
     throw Error('Password must be at least 8 characters long.');
@@ -22,19 +15,26 @@ const createUser = async ({ email, password, displayName }) => {
   if (!password.match(/[0-9]/g)) {
     throw Error('Password must include at least one number.');
   };
-
+  
+  // Password and email encrypter
   const SALT_COUNT = 10;
   const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
+  const hashedEmail = await bcrypt.hash(email, SALT_COUNT);
+
   try {
     const { rows: [user] } = await client.query(`
       INSERT INTO users(email, password, "displayName")
       VALUES($1, $2, $3)
       ON CONFLICT (email) DO NOTHING
       RETURNING *;
-    `, [email, hashedPassword, displayName]);
+    `, [hashedEmail, hashedPassword, displayName]);
 
     if (user.password) {
       delete user.password;
+    };
+
+    if (user.email) {
+      user.email = email;
     };
 
     return user;
@@ -43,20 +43,48 @@ const createUser = async ({ email, password, displayName }) => {
   };
 };
 
-const getUser = async ({ email, password }) => {
+const getUserById = async (id) => {
   try {
     const { rows: [user] } = await client.query(`
       SELECT *
       FROM users
-      WHERE email=$1;
-    `, [email]);
-    
+      WHERE id=$1;
+    `, [id]);
+
+    if(!user) {
+      throw Error('There is no user with that ID.');
+    };
+
+    // delete user.password;
+    return user;
+  } catch (error) {
+    throw error;
+  };
+};
+
+const getUser = async ({ id, email, password }) => {
+  
+  try {
+    const { rows: [user] } = await client.query(`
+      SELECT *
+      FROM users
+      WHERE id=$1;
+    `, [id]);
+
     const hashedPassword = user.password;
+    const hashedEmail = user.email;
+
     const passwordsMatch = await bcrypt.compare(password, hashedPassword);
     if (!passwordsMatch) {
       throw Error('Password incorrect.');
     };
 
+    const emailsMatch = await bcrypt.compare(email, hashedEmail);
+    if (!emailsMatch) {
+      throw Error('Email incorrect.');
+    };
+
+    user.email = email;
     delete user.password;
     return user;
   } catch (error) {
@@ -64,13 +92,56 @@ const getUser = async ({ email, password }) => {
   };
 };
 
-// const updateUser = async () => {
-//   try {
 
-//   } catch (error) {
-//     throw error;
-//   };
-// };
+const updateUser = async ({ id, email, password }) => {
+  const user = await getUserById(id);
+  const hashedEmail = user.email;
+  const hashedPassword = user.password;
+
+  // If the email or password is the same, dont re-encrypt it
+  const sameEmail = await bcrypt.compare(email, hashedEmail);
+  const samePassword = await bcrypt.compare(password, hashedPassword);
+  if (sameEmail && samePassword) {
+    user.email = email;
+    delete user.password;
+    return user;
+  };
+
+  // If one of them is different, must be re-encrypted
+  const updateFields = {};
+  const SALT_COUNT = 10;
+  let newHashedEmail;
+  let newHashedPassword;
+
+  if (!sameEmail) {
+    newHashedEmail = await bcrypt.hash(email, SALT_COUNT);
+    updateFields.email = newHashedEmail;
+  };
+
+  if (!samePassword) {
+    newHashedPassword = await bcrypt.hash(password, SALT_COUNT);
+    updateFields.password = newHashedPassword;
+  };
+
+  const setString = Object.keys(updateFields).map((key, index) => {
+    return `"${key}"=$${index + 1}`
+  }).join(', ');
+
+  try {
+    const { rows: [updatedUser] } = await client.query(`
+      UPDATE users
+      SET ${setString}
+      WHERE id=${id}
+      RETURNING *;
+    `, Object.values(updateFields));
+    
+    updatedUser.email = email;
+    delete updatedUser.password;
+    return updatedUser;
+  } catch (error) {
+    throw error;
+  };
+};
 
 // Will also need to destroy everything attached to the user
 // const destroyUser = async () => {
@@ -83,5 +154,7 @@ const getUser = async ({ email, password }) => {
 
 module.exports = {
   createUser,
+  getUserById,
   getUser,
+  updateUser,
 }

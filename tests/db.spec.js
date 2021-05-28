@@ -5,6 +5,7 @@ const { rebuildDB } = require('../db/seedData');
 const { 
   createUser,
   getUser,
+  updateUser,
 } = require('../db/adapters/users');
 const { expect, describe, it, beforeAll } = require('@jest/globals');
 
@@ -19,7 +20,7 @@ describe('Database', () => {
 
   // Users
   describe('Users', () => {
-    const testUser = { email: 'testUser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
+    const testUser = { id: 2, email: 'testUser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
     describe('createUser', () => {
       const userToCreate = {email: 'createdUser@test.com', password: 'Password19', displayName: 'Created User'};
       const badPassOne = {email: 'badpass@test.com', password: 'Pass19', displayName: 'Bad Pass'};
@@ -53,6 +54,19 @@ describe('Database', () => {
         expect(dbUser.password).not.toBe(userToCreate.password);
       });
 
+      it('Stores the hashed email in the database', async () => {
+        const { rows: [dbUser] } = await client.query(`
+          SELECT * FROM users
+          WHERE id=$1;
+        `, [createdUser.id]);
+        expect(dbUser.email).toBeTruthy();
+        expect(dbUser.email).not.toBe(userToCreate.email);
+      });
+
+      it(`Returns the user's unencrypted email`, () => {
+        expect(createdUser.email).toEqual(userToCreate.email);
+      });
+
       it(`Returns the user's information without the password`, () => {
         expect(createdUser.password).not.toBeTruthy();
       });
@@ -71,6 +85,34 @@ describe('Database', () => {
       it(`Does not return the user's password`, () => {
         expect(retrievedUser.password).toBeFalsy();
       });
-    })
+    });
+
+    describe('updateUser', () => {
+      const updatedEmail = { id: 2, email: 'testuser@test.com', password: 'iLoveStuffBase1' }
+      const updatedPassword = { id: 2, email: 'testUser@test.com', password: 'iLoveStuffBase2' }
+      
+      it(`Successfully updates the user's email`, async () => {
+        const { rows: [userToUpdate] } = await client.query(`
+          SELECT *
+          FROM users
+          WHERE id=$1;
+        `, [updatedEmail.id]);
+        const updatedUser = await updateUser(updatedEmail);
+        expect(updatedUser.email).not.toEqual(userToUpdate.email);
+        expect(updatedUser.email).toEqual(updatedEmail.email);
+      });
+
+      it(`Successfully updates the user's password`, async () => {
+        const { rows: [userToUpdate] } = await client.query(`
+          SELECT *
+          FROM users
+          WHERE id=$1;
+        `, [updatedPassword.id]);
+
+        const updatedUser = await updateUser(updatedPassword);
+        expect(updatedUser.password).not.toEqual(userToUpdate.password);
+      });
+
+    });
   });
 });
