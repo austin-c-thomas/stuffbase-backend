@@ -1,20 +1,10 @@
 const client = require('../client');
 const bcrypt = require('bcrypt');
+const { passwordStrengthCheck } = require('../../utils');
 
 const createUser = async ({ email, password, displayName }) => {
-  // Password strength checker
-  if (password.length < 8) {
-    throw Error('Password must be at least 8 characters long.');
-  };
-  if (!password.match(/[a-z]/g)) {
-    throw Error('Password must include at least one lowercase letter.');
-  };
-  if (!password.match(/[A-Z]/g)) {
-    throw Error('Password must include at least one uppercase letter.');
-  };
-  if (!password.match(/[0-9]/g)) {
-    throw Error('Password must include at least one number.');
-  };
+  // Check that password meets strength parameters
+  passwordStrengthCheck(password);
   
   // Password and email encrypter
   const SALT_COUNT = 10;
@@ -119,6 +109,8 @@ const updateUser = async ({ id, email, password }) => {
   };
 
   if (!samePassword) {
+    // Check that new password meets strength parameters
+    passwordStrengthCheck(password);
     newHashedPassword = await bcrypt.hash(password, SALT_COUNT);
     updateFields.password = newHashedPassword;
   };
