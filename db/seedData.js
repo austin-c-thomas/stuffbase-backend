@@ -1,6 +1,7 @@
 const client = require('./client');
 
 const { createUser } = require('./adapters/users');
+const { createStorageLocation } = require('./adapters/storage_locations');
 
 const dropTables = async () => {
   try {
@@ -37,7 +38,8 @@ const createTables = async () => {
         id SERIAL PRIMARY KEY,
         "userId" INTEGER REFERENCES users(id),
         name VARCHAR(255) UNIQUE NOT NULL,
-        location VARCHAR(255) DEFAULT 'Home'
+        location VARCHAR(255) DEFAULT 'Home',
+        note VARCHAR(255)
       );
     `)
 
@@ -80,22 +82,46 @@ const createInitialUsers = async () => {
   try {
     console.log('Creating initial users...');
     await createUser({
-      email: 'austinthomas.dev@gmail.com',
-      password: 'At12345678',
-      displayName: 'Aus and Ash',
-    });
-
-    await createUser({
       email: 'testUser@test.com', 
       password: 'iLoveStuffBase1', 
       displayName: 'Test User'
     });
-
+    
+    console.log('Finished creating initial users.')
   } catch (error) {
     console.error('Error creating initial users.');
     throw error;
   };
 };
+
+const createInitialStorageLocations = async () => {
+  try {
+    console.log('Creating initial storage locations...');
+    await createStorageLocation({
+      userId: 1,
+      name: 'Small outdoor closet',
+      note: 'Left side of patio',
+    });
+
+    await createStorageLocation({
+      userId: 1,
+      name: 'Large outdoor closet',
+      location: 'Home',
+      note: 'Right side of patio',
+    });
+
+    await createStorageLocation({
+      userId: 1,
+      name: '5x5 Storage Unit',
+      location: 'Remote',
+    });
+
+    console.log('Finished creating initial storage locations.')
+  } catch (error) {
+    console.error('Error creating initial storage locations.');
+    throw error;
+  };
+}
 
 const rebuildDB = async () => {
   try {
@@ -103,6 +129,7 @@ const rebuildDB = async () => {
     await dropTables();
     await createTables();
     await createInitialUsers();
+    await createInitialStorageLocations();
   } catch (error) {
     console.error('Error during rebuildDB.');
     throw error;
