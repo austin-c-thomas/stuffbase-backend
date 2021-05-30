@@ -8,6 +8,7 @@ const {
   updateUser,
 } = require('../db/adapters/users');
 const { expect, describe, it, beforeAll } = require('@jest/globals');
+const { createStorageLocation, getStorageLocationById, updateStorageLocation } = require('../db/adapters/storage_locations');
 
 describe('Database', () => {
   beforeAll(async () => {
@@ -20,7 +21,7 @@ describe('Database', () => {
 
   // Users
   describe('Users', () => {
-    const testUser = { id: 2, email: 'testUser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
+    const testUser = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
     describe('createUser', () => {
       const userToCreate = {email: 'createdUser@test.com', password: 'Password19', displayName: 'Created User'};
       const badPassOne = {email: 'badpass@test.com', password: 'Pass19', displayName: 'Bad Pass'};
@@ -88,8 +89,8 @@ describe('Database', () => {
     });
 
     describe('updateUser', () => {
-      const updatedEmail = { id: 2, email: 'testuser@test.com', password: 'iLoveStuffBase1' }
-      const updatedPassword = { id: 2, email: 'testUser@test.com', password: 'iLoveStuffBase2' }
+      const updatedEmail = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1' };
+      const updatedPassword = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase2' };
       
       it(`Successfully updates the user's email`, async () => {
         const { rows: [userToUpdate] } = await client.query(`
@@ -112,7 +113,59 @@ describe('Database', () => {
         const updatedUser = await updateUser(updatedPassword);
         expect(updatedUser.password).not.toEqual(userToUpdate.password);
       });
+    });
+  });
 
+  // Storage Locations
+  describe('Storage_Locations', () => {
+    const testLocation = { id: 3, userId: 1, name: '5x5 Storage Unit', location: 'Remote' };
+    const duplicateLocation = { userId: 1, name: '5x5 Storage Unit' }
+    describe('createStorageLocation', () => {
+      const locationToCreate = { userId: 1, name: 'Hall Closet', location: 'Home', note: 'For cleaning supplies' };
+      let newLocation = null;
+      beforeAll(async () => {
+        newLocation = await createStorageLocation(locationToCreate);
+      });
+
+      it('Creates a new storage location in the db table', async () => {
+        expect(newLocation).toBeTruthy();
+      });
+
+      it('Assigns the new storage location to the correct user', () => {
+        expect(newLocation.userId).toEqual(locationToCreate.userId);
+      });
+
+      it('Throws an error when trying to create a duplicate storage location', async () => {
+        expect.assertions(1);
+        await expect(createStorageLocation(duplicateLocation)).rejects.toEqual(Error('A storage location by that name already exists.'));
+      });
+    });
+
+    describe('getStorageLocationById', () => {
+      it('Retrieves the correct storage location from the db', async () => {
+        const storageLocation = await getStorageLocationById(testLocation.id);
+        expect(storageLocation.id).toEqual(testLocation.id);
+        expect(storageLocation.name).toEqual(testLocation.name);
+      });
+    });
+
+    describe('updateStorageLocation', () => {
+      const updates = { id: 3, name: '5x6 Storage Unit', note: 'Storage unit B18' }
+      let updatedStorageLocation = null;
+      beforeAll(async () => {
+        updatedStorageLocation = await updateStorageLocation(updates);
+      });
+
+      it('Updates the correct storageLocation', () => {
+        expect(updatedStorageLocation.id).toEqual(testLocation.id);
+      });
+
+      it('Successfully updates the fields passed in', () => {
+        expect(updatedStorageLocation.name).not.toEqual(testLocation.name);
+        expect(updatedStorageLocation.name).toEqual(updates.name);
+        expect(updatedStorageLocation.note).not.toEqual(testLocation.note);
+        expect(updatedStorageLocation.note).toEqual(updates.note);
+      });
     });
   });
 });
