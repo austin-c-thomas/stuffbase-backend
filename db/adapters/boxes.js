@@ -119,13 +119,13 @@ const destroyBox = async ({ id }) => {
   };
 };
 
-// const attachItemsToBox = async () => {
-//   try {
+const attachItemsToBoxes = async () => {
+  try {
     
-//   } catch (error) {
-//     throw error;
-//   };
-// };
+  } catch (error) {
+    throw error;
+  };
+};
 
 // const getBoxByItemId = async (id) => {
 //   try {

@@ -4,6 +4,7 @@ const { createUser } = require('./adapters/users');
 const { createStorageLocation } = require('./adapters/storage_locations');
 const { createItem } = require('./adapters/items');
 const { createBox } = require('./adapters/boxes');
+const { createBoxItem } = require('./adapters/box_items');
 
 const dropTables = async () => {
   try {
@@ -57,23 +58,22 @@ const createTables = async () => {
     `);
 
     await client.query(`
-    CREATE TABLE items (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      description VARCHAR(255),
-      category VARCHAR(255) DEFAULT 'MISC',
-      quantity INTEGER DEFAULT 1,
-      "imageURL" VARCHAR(255),
-      "userId" INTEGER REFERENCES users(id),
-      "locationId" INTEGER REFERENCES storage_locations(id)
-    );
+      CREATE TABLE items (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description VARCHAR(255),
+        category VARCHAR(255) DEFAULT 'MISC',
+        quantity INTEGER DEFAULT 1,
+        "imageURL" VARCHAR(255),
+        "userId" INTEGER REFERENCES users(id),
+        "locationId" INTEGER REFERENCES storage_locations(id)
+      );
   `);
 
     await client.query(`
       CREATE TABLE box_items (
-        id SERIAL PRIMARY KEY,
-        "boxId" INTEGER REFERENCES boxes(id),
-        "itemId" INTEGER REFERENCES items(id)
+        "itemId" INTEGER REFERENCES items(id) PRIMARY KEY,
+        "boxId" INTEGER REFERENCES boxes(id)
       );
     `);
 
@@ -170,6 +170,55 @@ const createInitialItems = async () => {
       locationId: 1,
     });
 
+    await createItem({
+      name: 'Coffee Maker',
+      category: 'Kitchen',
+      userId: 1,
+      locationId: 1,
+    });
+
+    await createItem({
+      name: 'Air Fryer',
+      category: 'Kitchen',
+      userId: 1,
+      locationId: 1,
+    });
+
+    await createItem({
+      name: 'Blender',
+      category: 'Kitchen',
+      userId: 1,
+      locationId: 1,
+    });
+
+    await createItem({
+      name: 'PBW',
+      category: 'Homebrew',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createItem({
+      name: 'Talking Gravestone',
+      category: 'Decor',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createItem({
+      name: 'Christmas Wreath',
+      category: 'Decor',
+      userId: 1,
+      locationId: 1,
+    });
+
+    await createItem({
+      name: 'Halloween Lights',
+      category: 'Decor',
+      userId: 1,
+      locationId: 1,
+    });
+
     console.log('Finished creating initial items.');
   } catch (error) {
     console.error('Error creating initial items.');
@@ -223,7 +272,42 @@ createInitialBoxes = async () => {
     console.error('Error creating initial boxes.');
     throw error;
   };
-}
+};
+
+const createInitialBoxItems = async () => {
+  try {
+    console.log('Creating initial box items...');
+    await createBoxItem({
+      boxId: 1,
+      itemId: 10,
+    });
+
+    await createBoxItem({
+      boxId: 1,
+      itemId: 12,
+    });
+
+    await createBoxItem({
+      boxId: 2,
+      itemId: 5,
+    });
+
+    await createBoxItem({
+      boxId: 2,
+      itemId: 6,
+    });
+
+    await createBoxItem({
+      boxId: 2,
+      itemId: 7,
+    });
+
+    console.log('Finished creating initial box items.');
+  } catch (error) {
+    console.error('Error creating initial box items.');
+    throw error;
+  };
+};
 
 const rebuildDB = async () => {
   try {
@@ -234,6 +318,7 @@ const rebuildDB = async () => {
     await createInitialStorageLocations();
     await createInitialItems();
     await createInitialBoxes();
+    await createInitialBoxItems();
   } catch (error) {
     console.error('Error during rebuildDB.');
     throw error;
