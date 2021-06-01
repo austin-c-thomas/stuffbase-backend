@@ -1,14 +1,31 @@
 require('dotenv').config();
 const client = require('../db/client');
 const { rebuildDB } = require('../db/seedData');
+const { 
+  expect, 
+  describe, 
+  it, 
+  beforeAll } = require('@jest/globals');
 
 const { 
   createUser,
   getUser,
   updateUser,
 } = require('../db/adapters/users');
-const { expect, describe, it, beforeAll } = require('@jest/globals');
-const { createStorageLocation, getStorageLocationById, updateStorageLocation } = require('../db/adapters/storage_locations');
+
+const { 
+  createStorageLocation, 
+  getStorageLocationById, 
+  updateStorageLocation } = require('../db/adapters/storage_locations');
+
+const {
+  createItem, 
+  getItemById, 
+  getItemsByLocation, 
+  getItemsByUserId,
+  updateItem,
+  destroyItem,
+} = require('../db/adapters/items');
 
 describe('Database', () => {
   beforeAll(async () => {
@@ -21,9 +38,9 @@ describe('Database', () => {
 
   // Users
   describe('Users', () => {
-    const testUser = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
+    const testUser = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
     describe('createUser', () => {
-      const userToCreate = {email: 'createdUser@test.com', password: 'Password19', displayName: 'Created User'};
+      const userToCreate = {email: 'createduser@test.com', password: 'Password19', displayName: 'Created User'};
       const badPassOne = {email: 'badpass@test.com', password: 'Pass19', displayName: 'Bad Pass'};
       const badPassTwo = {email: 'badpass@test.com', password: 'PASSWORD19', displayName: 'Bad Pass'};
       const badPassThree = {email: 'badpass@test.com', password: 'password19', displayName: 'Bad Pass'};
@@ -119,7 +136,6 @@ describe('Database', () => {
   // Storage Locations
   describe('Storage_Locations', () => {
     const testLocation = { id: 3, userId: 1, name: '5x5 Storage Unit', location: 'Remote' };
-    const duplicateLocation = { userId: 1, name: '5x5 Storage Unit' }
     describe('createStorageLocation', () => {
       const locationToCreate = { userId: 1, name: 'Hall Closet', location: 'Home', note: 'For cleaning supplies' };
       let newLocation = null;
@@ -133,11 +149,6 @@ describe('Database', () => {
 
       it('Assigns the new storage location to the correct user', () => {
         expect(newLocation.userId).toEqual(locationToCreate.userId);
-      });
-
-      it('Throws an error when trying to create a duplicate storage location', async () => {
-        expect.assertions(1);
-        await expect(createStorageLocation(duplicateLocation)).rejects.toEqual(Error('A storage location by that name already exists.'));
       });
     });
 
@@ -166,6 +177,137 @@ describe('Database', () => {
         expect(updatedStorageLocation.note).not.toEqual(testLocation.note);
         expect(updatedStorageLocation.note).toEqual(updates.note);
       });
+    });
+  });
+
+  // Items
+  describe('Items', () => {
+    const testItem = { id: 1, name: 'Christmas Tree', description: 'Fake white Christmas Tree', category: 'Christmas Decorations', userId: 1, locationId: 3 }
+    const itemToCreate = { name: 'Small Crate', description: `Hex's small dog crate`, category: 'Pets', userId: 1, locationId: 3 }
+    let itemToCreateAndDestroy = null;
+    describe('createItem', () => {
+      beforeAll(async () => {
+        itemToCreateAndDestroy = await createItem(itemToCreate);
+      });
+
+      it('Creates a new item in the db', () => {
+        expect(itemToCreateAndDestroy).toBeDefined();
+        expect(itemToCreateAndDestroy.name).toEqual(itemToCreate.name);
+        expect(itemToCreateAndDestroy.description).toEqual(itemToCreate.description);
+      });
+
+      it('Creates the new item under the correct user', () => {
+        expect(itemToCreateAndDestroy.userId).toBe(itemToCreate.userId);
+      });
+
+      it('If no quantity is supplied, sets the default value as 1', () => {
+        expect(itemToCreateAndDestroy.quantity).toEqual(1);
+      });
+    });
+
+    describe('getItemById', () => {
+      it('Retrieves the correct item from the db', async () => {
+        const { rows: [itemFromQuery] } = await client.query(`
+          SELECT *
+          FROM items
+          WHERE id=$1;
+        `, [2]);
+        const itemFromAdapter = await getItemById(2);
+        expect(itemFromQuery.id).toBe(itemFromAdapter.id);
+        expect(itemFromQuery.name).toEqual(itemFromAdapter.name);
+        expect(itemFromQuery.description).toEqual(itemFromAdapter.description);
+      });
+    });
+
+    describe('getItemsByLocation', () => {
+      const validLocationId = 3;
+      const invalidLocationId = 1000;
+      let itemsFromAdapter = null;
+      beforeAll(async () => {
+        itemsFromAdapter = await getItemsByLocation(validLocationId);
+      });
+
+      it('Returns an array, if the location exists', () => {
+        expect(Array.isArray(itemsFromAdapter)).toBe(true);
+      });
+
+      it('Throws an error, if the location does not exist', async () => {
+        expect.assertions(1);
+        await expect(getItemsByLocation(invalidLocationId)).rejects.toEqual(Error('There is no location with that ID.'));
+      });
+
+      it('Returns only items with the correct locationId', () => {
+        const itemsWithCorrectId = itemsFromAdapter.filter((item) => item.locationId === validLocationId);
+        expect(itemsWithCorrectId.length).toBe(itemsFromAdapter.length);
+      });
+    });
+
+    describe('getItemsByUserId', () => {
+      const validUserId = 1;
+      const invalidUserId = 1000;
+      let itemsFromAdapter = null;
+      beforeAll(async () => {
+        itemsFromAdapter = await getItemsByUserId(validUserId);
+      });
+
+      it('Returns an array, if the user exists', () => {
+        expect(Array.isArray(itemsFromAdapter)).toBe(true);
+      });
+
+      it('Throws an error, if the user does not exist', async () => {
+        expect.assertions(1);
+        await expect(getItemsByUserId(invalidUserId)).rejects.toEqual(Error('There is no user with that ID.'));
+      });
+    });
+
+    describe('updateItem', () => {
+      const itemToUpdateId = 2;
+      const itemUpdates = { id: itemToUpdateId, description: '6 gallon glass carboy', quantity: 2 }
+      let itemToUpdate = null;
+      let updatedItem = null;
+
+      beforeAll(async () => {
+        const { rows } = await client.query(`
+          SELECT *
+          FROM items
+          WHERE id=$1;
+        `, [2]);
+        itemToUpdate = rows[0];
+        updatedItem = await updateItem(itemUpdates);
+      });
+
+      it('Returns the correct item from the db', () => {
+        expect(updatedItem.id).toBe(itemToUpdateId);
+      });
+
+      it('Only updates the fields passed in, and returns the updated item', () => {
+        expect(updatedItem.name).toBe(itemToUpdate.name);
+        expect(updatedItem.quantity).toBe(itemUpdates.quantity);
+        expect(updatedItem.quantity).not.toBe(itemToUpdate.quantity);
+        expect(updatedItem.description).toBe(itemUpdates.description);
+        expect(updatedItem.description).not.toBe(itemToUpdate.description);
+      });
+    });
+
+    describe('destroyItem', () => {
+      let deletedItem = null;
+      beforeAll(async () => {
+        deletedItem = await destroyItem(itemToCreateAndDestroy);
+      });
+
+      it('Returns the correct destroyed item', () => {
+        expect(deletedItem).toBeDefined();
+        expect(deletedItem.id).toBe(itemToCreateAndDestroy.id);
+      });
+
+      it('Permanently deletes the item from the db', async () => {
+        const { rows: [item] } = await client.query(`
+          SELECT *
+          FROM items
+          WHERE id=$1;
+        `, [deletedItem.id]);
+        expect(item).toBeUndefined();
+      })
     });
   });
 });

@@ -6,10 +6,13 @@ const createUser = async ({ email, password, displayName }) => {
   // Check that password meets strength parameters
   passwordStrengthCheck(password);
   
+  // Ensure uniqueness by lowercasing email
+  const emailCased = email.toLowerCase();
+
   // Password and email encrypter
   const SALT_COUNT = 10;
   const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
-  const hashedEmail = await bcrypt.hash(email, SALT_COUNT);
+  const hashedEmail = await bcrypt.hash(emailCased, SALT_COUNT);
 
   try {
     const { rows: [user] } = await client.query(`
@@ -24,7 +27,7 @@ const createUser = async ({ email, password, displayName }) => {
     };
 
     if (user.email) {
-      user.email = email;
+      user.email = emailCased;
     };
 
     return user;
@@ -53,7 +56,8 @@ const getUserById = async (id) => {
 };
 
 const getUser = async ({ id, email, password }) => {
-  
+  const emailCased = email.toLowerCase();
+
   try {
     const { rows: [user] } = await client.query(`
       SELECT *
@@ -69,12 +73,12 @@ const getUser = async ({ id, email, password }) => {
       throw Error('Password incorrect.');
     };
 
-    const emailsMatch = await bcrypt.compare(email, hashedEmail);
+    const emailsMatch = await bcrypt.compare(emailCased, hashedEmail);
     if (!emailsMatch) {
       throw Error('Email incorrect.');
     };
 
-    user.email = email;
+    user.email = emailCased;
     delete user.password;
     return user;
   } catch (error) {
@@ -85,14 +89,15 @@ const getUser = async ({ id, email, password }) => {
 
 const updateUser = async ({ id, email, password }) => {
   const user = await getUserById(id);
+  const emailCased = email.toLowerCase();
   const hashedEmail = user.email;
   const hashedPassword = user.password;
 
   // If the email or password is the same, dont re-encrypt it
-  const sameEmail = await bcrypt.compare(email, hashedEmail);
+  const sameEmail = await bcrypt.compare(emailCased, hashedEmail);
   const samePassword = await bcrypt.compare(password, hashedPassword);
   if (sameEmail && samePassword) {
-    user.email = email;
+    user.email = emailCased;
     delete user.password;
     return user;
   };
@@ -104,7 +109,7 @@ const updateUser = async ({ id, email, password }) => {
   let newHashedPassword;
 
   if (!sameEmail) {
-    newHashedEmail = await bcrypt.hash(email, SALT_COUNT);
+    newHashedEmail = await bcrypt.hash(emailCased, SALT_COUNT);
     updateFields.email = newHashedEmail;
   };
 
@@ -128,7 +133,7 @@ const updateUser = async ({ id, email, password }) => {
       RETURNING *;
     `, Object.values(updateFields));
     
-    updatedUser.email = email;
+    updatedUser.email = emailCased;
     delete updatedUser.password;
     return updatedUser;
   } catch (error) {
