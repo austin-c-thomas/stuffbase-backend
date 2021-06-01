@@ -37,7 +37,7 @@ const getItemById = async (id) => {
   };
 };
 
-const getItemsByLocation = async (locationId) => {
+const getItemsByLocationId = async (locationId) => {
   try {
     const locationExists = await getStorageLocationById(locationId);
 
@@ -119,7 +119,7 @@ const destroyItem = async ({ id }) => {
 module.exports = {
   createItem,
   getItemById,
-  getItemsByLocation,
+  getItemsByLocationId,
   getItemsByUserId,
   updateItem,
   destroyItem,
