@@ -37,9 +37,9 @@ describe('Database', () => {
 
   // Users
   describe('Users', () => {
-    const testUser = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
+    const testUser = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
     describe('createUser', () => {
-      const userToCreate = {email: 'createdUser@test.com', password: 'Password19', displayName: 'Created User'};
+      const userToCreate = {email: 'createduser@test.com', password: 'Password19', displayName: 'Created User'};
       const badPassOne = {email: 'badpass@test.com', password: 'Pass19', displayName: 'Bad Pass'};
       const badPassTwo = {email: 'badpass@test.com', password: 'PASSWORD19', displayName: 'Bad Pass'};
       const badPassThree = {email: 'badpass@test.com', password: 'password19', displayName: 'Bad Pass'};

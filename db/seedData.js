@@ -86,7 +86,7 @@ const createInitialUsers = async () => {
   try {
     console.log('Creating initial users...');
     await createUser({
-      email: 'testUser@test.com', 
+      email: 'testuser@test.com', 
       password: 'iLoveStuffBase1', 
       displayName: 'Test User'
     });
