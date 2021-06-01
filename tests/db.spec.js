@@ -16,7 +16,8 @@ const {
 const { 
   createStorageLocation, 
   getStorageLocationById, 
-  updateStorageLocation } = require('../db/adapters/storage_locations');
+  updateStorageLocation 
+} = require('../db/adapters/storage_locations');
 
 const {
   createItem, 
@@ -35,6 +36,14 @@ const {
   updateBox,
   destroyBox,
 } = require('../db/adapters/boxes');
+
+const { 
+  createBoxItem, 
+  getBoxItemByItemId, 
+  getBoxItemsByBoxId, 
+  updateBoxItem,
+  destroyBoxItem
+} = require('../db/adapters/box_items');
 
 describe('Database', () => {
   beforeAll(async () => {
@@ -455,5 +464,83 @@ describe('Database', () => {
         expect(box).toBeUndefined();
       });
     });
+  });
+
+  // Box Items
+  describe('Box Items', () => {
+    const newBoxItemData = { boxId: 2, itemId: 8 }
+    const duplicateItemData = { boxId: 3, itemId: 8 }
+    let newBoxItem = null;
+    describe('createBoxItem', () => {
+      beforeAll(async () => {
+        newBoxItem = await createBoxItem(newBoxItemData);
+      });
+
+      it('Creates a new relationship between an item and a box', () => {
+        expect(newBoxItem.boxId).toBe(newBoxItemData.boxId);
+        expect(newBoxItem.itemId).toBe(newBoxItemData.itemId);
+      });
+
+      it('Does not allow the same item to have two boxes', async () => {
+        expect.assertions(1);
+        await expect(createBoxItem(duplicateItemData)).rejects.toEqual(Error('duplicate key value violates unique constraint "box_items_pkey"'))
+      });
+    });
+
+    describe('getBoxItemByItemId', () => {
+      it('Returns the correct box-item relationship, if one exists', async () => {
+        const boxItem = await getBoxItemByItemId(newBoxItem.itemId);
+        expect(boxItem.itemId).toBe(newBoxItem.itemId);
+        expect(boxItem.boxId).toBe(newBoxItem.boxId);
+      });
+
+      it('Throws an error, if no relationship exists', async () => {
+        expect.assertions(1);
+        await expect(getBoxItemByItemId(0)).rejects.toEqual(Error('That item is not in a box.'));        
+      });
+    });
+
+    describe('getBoxItemsByBoxId', () => {
+      const validBoxId = 2;
+      const invalidBoxId = 0;
+      let boxItemList = null;
+      beforeAll(async () => {
+        boxItemList = await getBoxItemsByBoxId(validBoxId);
+      });
+
+      it ('Returns an array', () => {
+        expect(Array.isArray(boxItemList)).toBe(true);
+      });
+
+      it('Returns only box-items with the correct boxId', async () => {
+        const boxItemsWithCorrectId = boxItemList.filter((boxItem) => boxItem.boxId === validBoxId);
+        expect(boxItemsWithCorrectId.length).toBe(boxItemList.length);
+      });
+
+      it('Throws an error, if no relationship exists', async () => {
+        expect.assertions(1);
+        await expect(getBoxItemsByBoxId(invalidBoxId)).rejects.toEqual(Error('There is no box with that ID.'));        
+      });
+    });
+
+    describe('updateBoxItem', () => {
+      const updatedData = { boxId: 3, itemId: 8 }
+
+      it('Updates the boxId of the box-item', async () => {
+        const updatedBoxItem = await updateBoxItem(updatedData);
+        expect(updatedBoxItem.boxId).toBe(updatedData.boxId);
+      });
+    });
+
+    describe('deleteBoxItem', () => {
+      it('Removes the box-item relationship from the db', async () => {
+        expect.assertions(3);
+        const deletedBoxItem = await destroyBoxItem(newBoxItem);
+        expect(deletedBoxItem.itemId).toBe(newBoxItem.itemId);
+        expect(deletedBoxItem.boxId).toBe(3);
+        await expect(getBoxItemByItemId(deletedBoxItem.itemId)).rejects.toEqual(Error('That item is not in a box.'));
+      });
+    });
+
   });
 });
