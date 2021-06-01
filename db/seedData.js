@@ -38,7 +38,7 @@ const createTables = async () => {
       CREATE TABLE storage_locations (
         id SERIAL PRIMARY KEY,
         "userId" INTEGER REFERENCES users(id),
-        name VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
         location VARCHAR(255) DEFAULT 'Home',
         note VARCHAR(255)
       );
@@ -47,7 +47,7 @@ const createTables = async () => {
     await client.query(`
       CREATE TABLE boxes (
         id SERIAL PRIMARY KEY,
-        label VARCHAR(255) UNIQUE NOT NULL,
+        label VARCHAR(255) NOT NULL,
         type VARCHAR(255) DEFAULT 'Box(small)',
         "userId" INTEGER REFERENCES users(id),
         "locationId" INTEGER REFERENCES storage_locations(id)
@@ -57,7 +57,7 @@ const createTables = async () => {
     await client.query(`
     CREATE TABLE items (
       id SERIAL PRIMARY KEY,
-      name VARCHAR(255) UNIQUE NOT NULL,
+      name VARCHAR(255) NOT NULL,
       description VARCHAR(255),
       category VARCHAR(255) DEFAULT 'MISC',
       quantity INTEGER DEFAULT 1,

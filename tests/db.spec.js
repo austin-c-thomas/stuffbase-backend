@@ -135,7 +135,6 @@ describe('Database', () => {
   // Storage Locations
   describe('Storage_Locations', () => {
     const testLocation = { id: 3, userId: 1, name: '5x5 Storage Unit', location: 'Remote' };
-    const duplicateLocation = { userId: 1, name: '5x5 Storage Unit' }
     describe('createStorageLocation', () => {
       const locationToCreate = { userId: 1, name: 'Hall Closet', location: 'Home', note: 'For cleaning supplies' };
       let newLocation = null;
@@ -149,11 +148,6 @@ describe('Database', () => {
 
       it('Assigns the new storage location to the correct user', () => {
         expect(newLocation.userId).toEqual(locationToCreate.userId);
-      });
-
-      it('Throws an error when trying to create a duplicate storage location', async () => {
-        expect.assertions(1);
-        await expect(createStorageLocation(duplicateLocation)).rejects.toEqual(Error('A storage location by that name already exists.'));
       });
     });
 
@@ -292,6 +286,10 @@ describe('Database', () => {
         expect(updatedItem.description).toBe(itemUpdates.description);
         expect(updatedItem.description).not.toBe(itemToUpdate.description);
       });
+    });
+
+    describe('destroyItem', () => {
+      const dummyItem = {  }
     });
   });
 });

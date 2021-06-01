@@ -10,21 +10,13 @@ const createItem = async ({
   imageURL, 
   userId,
   locationId }) => {
-
-  if (!quantity) {
     
-  }
   try {
     const { rows: [newItem] } = await client.query(`
       INSERT INTO items(name, description, category, quantity, "imageURL", "userId", "locationId")
       VALUES($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (name) DO NOTHING
       RETURNING *;
     `, [name, description, category, quantity, imageURL, userId, locationId]);
-
-    if(!newItem) {
-      throw Error('You have already added that item.')
-    };
 
     return newItem;
   } catch (error) {
@@ -111,13 +103,19 @@ const updateItem = async (item) => {
   };
 };
 
-// const destroyItem = async () => {
-//   try {
-
-//   } catch (error) {
-//     throw error;
-//   };
-// };
+const destroyItem = async ({ id }) => {
+  try {
+    const { rows: [deletedItem] } = await client.query(`
+      DELETE FROM items
+      WHERE "id"=$1
+      RETURNING *;
+    `, [id]);
+    
+    return deletedItem;
+  } catch (error) {
+    throw error;
+  };
+};
 
 module.exports = {
   createItem,
@@ -125,4 +123,5 @@ module.exports = {
   getItemsByLocation,
   getItemsByUserId,
   updateItem,
+  destroyItem,
 }

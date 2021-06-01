@@ -5,13 +5,9 @@ const createStorageLocation = async ({ userId, name, location = "Home", note }) 
     const { rows: [newStorageLocation] } = await client.query(`
       INSERT INTO storage_locations("userId", name, location, note)
       VALUES($1, $2, $3, $4)
-      ON CONFLICT (name) DO NOTHING
       RETURNING *;
     `, [userId, name, location, note]);
 
-    if (!newStorageLocation) {
-      throw Error('A storage location by that name already exists.');
-    }
     return newStorageLocation;
   } catch (error) {
     throw error;
