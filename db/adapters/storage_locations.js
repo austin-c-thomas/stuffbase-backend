@@ -26,6 +26,10 @@ const getStorageLocationById = async (id) => {
       WHERE id=$1;
     `, [id]);
 
+    if(!storageLocation) {
+      throw Error('There is no location with that ID.');
+    };
+
     return storageLocation;
   } catch (error) {
     throw error;

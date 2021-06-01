@@ -2,6 +2,7 @@ const client = require('./client');
 
 const { createUser } = require('./adapters/users');
 const { createStorageLocation } = require('./adapters/storage_locations');
+const { createItem } = require('./adapters/items');
 
 const dropTables = async () => {
   try {
@@ -48,6 +49,7 @@ const createTables = async () => {
         id SERIAL PRIMARY KEY,
         label VARCHAR(255) UNIQUE NOT NULL,
         type VARCHAR(255) DEFAULT 'Box(small)',
+        "userId" INTEGER REFERENCES users(id),
         "locationId" INTEGER REFERENCES storage_locations(id)
       );
     `);
@@ -56,9 +58,11 @@ const createTables = async () => {
     CREATE TABLE items (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) UNIQUE NOT NULL,
-      description VARCHAR(255) NOT NULL,
+      description VARCHAR(255),
       category VARCHAR(255) DEFAULT 'MISC',
+      quantity INTEGER DEFAULT 1,
       "imageURL" VARCHAR(255),
+      "userId" INTEGER REFERENCES users(id),
       "locationId" INTEGER REFERENCES storage_locations(id)
     );
   `);
@@ -121,7 +125,55 @@ const createInitialStorageLocations = async () => {
     console.error('Error creating initial storage locations.');
     throw error;
   };
-}
+};
+
+const createInitialItems = async () => {
+  try {
+    console.log('Creating initial items...');
+    await createItem({
+      name: 'Christmas Tree',
+      description: 'Fake white Christmas Tree',
+      category: 'Christmas Decorations',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createItem({
+      name: '6 Gallon Carboy',
+      category: 'Homebrew',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createItem({
+      name: 'SS Fermenter',
+      description: 'Stainless steel 7 gal fermenter',
+      category: 'Homebrew',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createItem({
+      name: `8' Wavestorm`,
+      description: 'Blue softtop surfboard',
+      category: 'Outdoors',
+      userId: 1,
+      locationId: 2,
+    });
+
+    await createItem({
+      name: 'Nespresso',
+      category: 'Kitchen',
+      userId: 1,
+      locationId: 1,
+    });
+
+    console.log('Finished creating initial items.');
+  } catch (error) {
+    console.error('Error creating initial items.');
+    throw error;
+  };
+};
 
 const rebuildDB = async () => {
   try {
@@ -130,6 +182,7 @@ const rebuildDB = async () => {
     await createTables();
     await createInitialUsers();
     await createInitialStorageLocations();
+    await createInitialItems();
   } catch (error) {
     console.error('Error during rebuildDB.');
     throw error;

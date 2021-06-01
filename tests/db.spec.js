@@ -1,14 +1,26 @@
 require('dotenv').config();
 const client = require('../db/client');
 const { rebuildDB } = require('../db/seedData');
+const { 
+  expect, 
+  describe, 
+  it, 
+  beforeAll } = require('@jest/globals');
 
 const { 
   createUser,
   getUser,
   updateUser,
 } = require('../db/adapters/users');
-const { expect, describe, it, beforeAll } = require('@jest/globals');
-const { createStorageLocation, getStorageLocationById, updateStorageLocation } = require('../db/adapters/storage_locations');
+
+const { 
+  createStorageLocation, 
+  getStorageLocationById, 
+  updateStorageLocation } = require('../db/adapters/storage_locations');
+
+const {
+  createItem, getItemById, getItemsByLocation, getItemsByUserId,
+} = require('../db/adapters/items');
 
 describe('Database', () => {
   beforeAll(async () => {
@@ -165,6 +177,87 @@ describe('Database', () => {
         expect(updatedStorageLocation.name).toEqual(updates.name);
         expect(updatedStorageLocation.note).not.toEqual(testLocation.note);
         expect(updatedStorageLocation.note).toEqual(updates.note);
+      });
+    });
+  });
+
+  // Items
+  describe('Items', () => {
+    const testItem = { id: 1, name: 'Christmas Tree', description: 'Fake white Christmas Tree', category: 'Christmas Decorations', userId: 1, locationId: 3 }
+    describe('createItem', () => {
+      const itemToCreate = { name: 'Small Crate', description: `Hex's small dog crate`, category: 'Pets', userId: 1, locationId: 3 }
+      let newItem = null;
+      beforeAll(async () => {
+        newItem = await createItem(itemToCreate);
+      });
+
+      it('Creates a new item in the db', () => {
+        expect(newItem).toBeDefined();
+        expect(newItem.name).toEqual(itemToCreate.name);
+        expect(newItem.description).toEqual(itemToCreate.description);
+      });
+
+      it('Creates the new item under the correct user', () => {
+        expect(newItem.userId).toBe(itemToCreate.userId);
+      });
+
+      it('If no quantity is supplied, sets the default value as 1', () => {
+        expect(newItem.quantity).toEqual(1);
+      });
+    });
+
+    describe('getItemById', () => {
+      it('Retrieves the correct item from the db', async () => {
+        const { rows: [itemFromQuery] } = await client.query(`
+          SELECT *
+          FROM items
+          WHERE id=$1;
+        `, [2]);
+        const itemFromAdapter = await getItemById(2);
+        expect(itemFromQuery.id).toBe(itemFromAdapter.id);
+        expect(itemFromQuery.name).toEqual(itemFromAdapter.name);
+        expect(itemFromQuery.description).toEqual(itemFromAdapter.description);
+      });
+    });
+
+    describe('getItemsByLocation', () => {
+      const validLocationId = 3;
+      const invalidLocationId = 1000;
+      let itemsFromAdapter = null;
+      beforeAll(async () => {
+        itemsFromAdapter = await getItemsByLocation(validLocationId);
+      });
+
+      it('Returns an array, if the location exists', () => {
+        expect(Array.isArray(itemsFromAdapter)).toBe(true);
+      });
+
+      it('Throws an error, if the location does not exist', async () => {
+        expect.assertions(1);
+        await expect(getItemsByLocation(invalidLocationId)).rejects.toEqual(Error('There is no location with that ID.'));
+      });
+
+      it('Returns only items with the correct locationId', () => {
+        const itemsWithCorrectId = itemsFromAdapter.filter((item) => item.locationId === validLocationId);
+        expect(itemsWithCorrectId.length).toBe(itemsFromAdapter.length);
+      });
+    });
+
+    describe('getItemsByUserId', () => {
+      const validUserId = 1;
+      const invalidUserId = 1000;
+      let itemsFromAdapter = null;
+      beforeAll(async () => {
+        itemsFromAdapter = await getItemsByUserId(validUserId);
+      });
+
+      it('Returns an array, if the user exists', () => {
+        expect(Array.isArray(itemsFromAdapter)).toBe(true);
+      });
+
+      it('Throws an error, if the user does not exist', async () => {
+        expect.assertions(1);
+        await expect(getItemsByUserId(invalidUserId)).rejects.toEqual(Error('There is no user with that ID.'));
       });
     });
   });
