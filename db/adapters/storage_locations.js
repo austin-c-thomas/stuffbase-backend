@@ -36,20 +36,16 @@ const getStorageLocationById = async (id) => {
   };
 };
 
-const updateStorageLocation = async ({ id, name, location, note }) => {
-  // Only update the fields that were supplied
+const updateStorageLocation = async (storageLocationUpdates) => {
+  if (!storageLocationUpdates.id) {
+    throw Error('You must supply the storage location ID in your request.')
+  };
+
+  // Only update the fields passed in.
   const updateFields = {};
-  if (name) {
-    updateFields.name = name;
-  };
-
-  if (location) {
-    updateFields.location = location;
-  };
-
-  if (note) {
-    updateFields.note = note;
-  };
+  Object.entries(storageLocationUpdates).forEach((set) => {
+    updateFields[set[0]] = set[1];
+  });
 
   const setString = Object.keys(updateFields).map((key, index) => {
     return `"${key}"=$${index + 1}`
@@ -59,7 +55,7 @@ const updateStorageLocation = async ({ id, name, location, note }) => {
     const { rows: [updatedStorageLocation] } = await client.query(`
       UPDATE storage_locations
       SET ${setString}
-      WHERE id=${id}
+      WHERE id=${storageLocationUpdates.id}
       RETURNING *;
     `, Object.values(updateFields));
 

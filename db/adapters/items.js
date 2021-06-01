@@ -82,13 +82,34 @@ const getItemsByUserId = async (userId) => {
   };
 };
 
-// const updateItem = async () => {
-//   try {
+const updateItem = async (item) => {
+  if (!item.id) {
+    throw Error('You must supply the item ID in your request.')
+  };
 
-//   } catch (error) {
-//     throw error;
-//   };
-// };
+  //Only update the fields passed in.
+  const updateFields = {}
+  Object.entries(item).forEach((set) => {
+    updateFields[set[0]] = set[1];
+  });
+
+  const setString = Object.keys(updateFields).map((key, index) => {
+    return `"${key}"=$${index + 1}`
+  }).join(', ');
+  
+  try {
+    const { rows: [updatedItem] } = await client.query(`
+      UPDATE items
+      SET ${setString}
+      WHERE id=${item.id}
+      RETURNING *;
+    `, Object.values(updateFields));
+
+    return updatedItem;
+  } catch (error) {
+    throw error;
+  };
+};
 
 // const destroyItem = async () => {
 //   try {
@@ -103,4 +124,5 @@ module.exports = {
   getItemById,
   getItemsByLocation,
   getItemsByUserId,
+  updateItem,
 }

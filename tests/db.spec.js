@@ -19,7 +19,11 @@ const {
   updateStorageLocation } = require('../db/adapters/storage_locations');
 
 const {
-  createItem, getItemById, getItemsByLocation, getItemsByUserId,
+  createItem, 
+  getItemById, 
+  getItemsByLocation, 
+  getItemsByUserId,
+  updateItem,
 } = require('../db/adapters/items');
 
 describe('Database', () => {
@@ -258,6 +262,35 @@ describe('Database', () => {
       it('Throws an error, if the user does not exist', async () => {
         expect.assertions(1);
         await expect(getItemsByUserId(invalidUserId)).rejects.toEqual(Error('There is no user with that ID.'));
+      });
+    });
+
+    describe('updateItem', () => {
+      const itemToUpdateId = 2;
+      const itemUpdates = { id: itemToUpdateId, description: '6 gallon glass carboy', quantity: 2 }
+      let itemToUpdate = null;
+      let updatedItem = null;
+
+      beforeAll(async () => {
+        const { rows } = await client.query(`
+          SELECT *
+          FROM items
+          WHERE id=$1;
+        `, [2]);
+        itemToUpdate = rows[0];
+        updatedItem = await updateItem(itemUpdates);
+      });
+
+      it('Returns the correct item from the db', () => {
+        expect(updatedItem.id).toBe(itemToUpdateId);
+      });
+
+      it('Only updates the fields passed in, and returns the updated item', () => {
+        expect(updatedItem.name).toBe(itemToUpdate.name);
+        expect(updatedItem.quantity).toBe(itemUpdates.quantity);
+        expect(updatedItem.quantity).not.toBe(itemToUpdate.quantity);
+        expect(updatedItem.description).toBe(itemUpdates.description);
+        expect(updatedItem.description).not.toBe(itemToUpdate.description);
       });
     });
   });
