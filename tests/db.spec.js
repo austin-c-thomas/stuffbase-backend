@@ -21,11 +21,20 @@ const {
 const {
   createItem, 
   getItemById, 
-  getItemsByLocation, 
+  getItemsByLocationId, 
   getItemsByUserId,
   updateItem,
   destroyItem,
 } = require('../db/adapters/items');
+
+const {
+  createBox, 
+  getBoxById, 
+  getBoxesByUserId, 
+  getBoxesByLocationId,
+  updateBox,
+  destroyBox,
+} = require('../db/adapters/boxes');
 
 describe('Database', () => {
   beforeAll(async () => {
@@ -224,7 +233,7 @@ describe('Database', () => {
       const invalidLocationId = 1000;
       let itemsFromAdapter = null;
       beforeAll(async () => {
-        itemsFromAdapter = await getItemsByLocation(validLocationId);
+        itemsFromAdapter = await getItemsByLocationId(validLocationId);
       });
 
       it('Returns an array, if the location exists', () => {
@@ -233,7 +242,7 @@ describe('Database', () => {
 
       it('Throws an error, if the location does not exist', async () => {
         expect.assertions(1);
-        await expect(getItemsByLocation(invalidLocationId)).rejects.toEqual(Error('There is no location with that ID.'));
+        await expect(getItemsByLocationId(invalidLocationId)).rejects.toEqual(Error('There is no location with that ID.'));
       });
 
       it('Returns only items with the correct locationId', () => {
@@ -257,6 +266,11 @@ describe('Database', () => {
       it('Throws an error, if the user does not exist', async () => {
         expect.assertions(1);
         await expect(getItemsByUserId(invalidUserId)).rejects.toEqual(Error('There is no user with that ID.'));
+      });
+
+      it('Returns only items with the correct userId', () => {
+        const itemsWithCorrectId = itemsFromAdapter.filter((item) => item.userId === validUserId);
+        expect(itemsWithCorrectId.length).toBe(itemsFromAdapter.length);
       });
     });
 
@@ -307,7 +321,139 @@ describe('Database', () => {
           WHERE id=$1;
         `, [deletedItem.id]);
         expect(item).toBeUndefined();
-      })
+      });
+    });
+  });
+
+  // Boxes
+  describe('Boxes', () => {
+    const newBoxData = { label: 'Homebrew Supplies', description: '2 x 4 Plastic Tub', category: 'Homebrew', userId: 1, locationId: 3 };
+    const boxToGet = { id: 1, label: 'Halloween Decor', description: '2 x 4 Plastic Tub', category: 'Decor', userId: 1, locationId: 3 };
+    let boxToCreateAndUpdate = null;
+    describe('createBox', () => {
+      beforeAll(async () => {
+        boxToCreateAndUpdate = await createBox(newBoxData);
+      });
+
+      it('Creates a new box in the db', () => {
+        expect(boxToCreateAndUpdate.id).toBeDefined();
+      });
+
+      it('Creates a box with the correct data', () => {
+        expect(boxToCreateAndUpdate.label).toEqual(newBoxData.label);
+        expect(boxToCreateAndUpdate.description).toEqual(newBoxData.description);
+        expect(boxToCreateAndUpdate.userId).toBe(newBoxData.userId);
+        expect(boxToCreateAndUpdate.locationId).toBe(newBoxData.locationId);
+      });
+    });
+
+    describe('getBoxById', () => {
+      it ('Retrieves the correct box data from the db', async () => {
+        const box = await getBoxById(boxToGet.id);
+        expect(box).toBeDefined();
+        expect(box.id).toBe(boxToGet.id);
+      });
+
+      it ('Throws an error if the box does not exist', async () => {
+        expect.assertions(1);
+        await expect(getBoxById(0)).rejects.toEqual(Error('There is no box with that ID.'));
+      });
+    });
+
+    describe('getBoxesByLocation', () => {
+      const validLocationId = 3;
+      const invalidLocationId = 1000;
+      let boxesFromAdapter = null;
+      beforeAll(async () => {
+        boxesFromAdapter = await getBoxesByLocationId(validLocationId);
+      });
+
+      it('Returns an array, if the location exists', () => {
+        expect(Array.isArray(boxesFromAdapter)).toBe(true);
+      });
+
+      it('Throws an error, if the location does not exist', async () => {
+        expect.assertions(1);
+        await expect(getBoxesByLocationId(invalidLocationId)).rejects.toEqual(Error('There is no location with that ID.'));
+      });
+
+      it('Returns only boxes with the correct locationId', () => {
+        const boxesWithCorrectId = boxesFromAdapter.filter((box) => box.locationId === validLocationId);
+        expect(boxesWithCorrectId.length).toBe(boxesFromAdapter.length);
+      });
+    });
+
+    describe('getBoxesByUserId', () => {
+      const validUserId = 1;
+      const invalidUserId = 1000;
+      let boxesFromAdapter = null;
+      beforeAll(async () => {
+        boxesFromAdapter = await getBoxesByUserId(validUserId);
+      });
+
+      it('Returns an array, if the user exists', () => {
+        expect(Array.isArray(boxesFromAdapter)).toBe(true);
+      });
+
+      it('Throws an error, if the user does not exist', async () => {
+        expect.assertions(1);
+        await expect(getBoxesByUserId(invalidUserId)).rejects.toEqual(Error('There is no user with that ID.'));
+      });
+
+      it('Returns only boxes with the correct userId', () => {
+        const boxesWithCorrectId = boxesFromAdapter.filter((box) => box.userId === validUserId);
+        expect(boxesWithCorrectId.length).toBe(boxesFromAdapter.length);
+      });
+    });
+
+    describe('updateBox', () => {
+      const boxToUpdateId = 5;
+      const boxUpdates = { id: boxToUpdateId, label: 'Her Jackets', category: 'Clothing' }
+      let boxToUpdate = null;
+      let updatedBox = null;
+
+      beforeAll(async () => {
+        const { rows } = await client.query(`
+          SELECT *
+          FROM boxes
+          WHERE id=$1;
+        `, [5]);
+        boxToUpdate = rows[0];
+        updatedBox = await updateBox(boxUpdates);
+      });
+
+      it('Returns the correct box from the db', () => {
+        expect(updatedBox.id).toBe(boxToUpdateId);
+      });
+
+      it('Only updates the fields passed in, and returns the updated item', () => {
+        expect(updatedBox.id).toBe(boxToUpdate.id);
+        expect(updatedBox.label).toBe(boxUpdates.label);
+        expect(updatedBox.label).not.toBe(boxToUpdate.label);
+        expect(updatedBox.category).toBe(boxUpdates.category);
+        expect(updatedBox.category).not.toBe(boxToUpdate.category);
+      });
+    });
+
+    describe('destroyBox', () => {
+      let deletedBox = null;
+      beforeAll(async () => {
+        deletedBox = await destroyBox(boxToCreateAndUpdate);
+      });
+
+      it('Returns the correct destroyed box', () => {
+        expect(deletedBox).toBeDefined();
+        expect(deletedBox.id).toBe(boxToCreateAndUpdate.id);
+      });
+
+      it('Permanently deletes the box from the db', async () => {
+        const { rows: [box] } = await client.query(`
+          SELECT *
+          FROM boxes
+          WHERE id=$1;
+        `, [deletedBox.id]);
+        expect(box).toBeUndefined();
+      });
     });
   });
 });

@@ -3,6 +3,7 @@ const client = require('./client');
 const { createUser } = require('./adapters/users');
 const { createStorageLocation } = require('./adapters/storage_locations');
 const { createItem } = require('./adapters/items');
+const { createBox } = require('./adapters/boxes');
 
 const dropTables = async () => {
   try {
@@ -48,7 +49,8 @@ const createTables = async () => {
       CREATE TABLE boxes (
         id SERIAL PRIMARY KEY,
         label VARCHAR(255) NOT NULL,
-        type VARCHAR(255) DEFAULT 'Box(small)',
+        description VARCHAR(255),
+        category VARCHAR(255) DEFAULT 'MISC',
         "userId" INTEGER REFERENCES users(id),
         "locationId" INTEGER REFERENCES storage_locations(id)
       );
@@ -133,7 +135,7 @@ const createInitialItems = async () => {
     await createItem({
       name: 'Christmas Tree',
       description: 'Fake white Christmas Tree',
-      category: 'Christmas Decorations',
+      category: 'Decor',
       userId: 1,
       locationId: 3,
     });
@@ -175,6 +177,54 @@ const createInitialItems = async () => {
   };
 };
 
+createInitialBoxes = async () => {
+  try {
+    console.log('Creating initial boxes...');
+    await createBox({
+      label: 'Halloween Decor',
+      description: '2 x 4 Plastic Tub',
+      category: 'Decor',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createBox({
+      label: 'Kitchen 1',
+      description: 'Cardboard Box (lg)',
+      category: 'Kitchen',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createBox({
+      label: 'Kitchen 2',
+      description: 'Cardboard Box (lg)',
+      category: 'Kitchen',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createBox({
+      label: 'His MISC',
+      description: '2 x 4 Plastic Tub',
+      userId: 1,
+      locationId: 3,
+    });
+
+    await createBox({
+      label: 'Her MISC',
+      description: '2 x 4 Plastic Tub',
+      userId: 1,
+      locationId: 3,
+    });
+
+    console.log('Finished creating initial boxes.')
+  } catch (error) {
+    console.error('Error creating initial boxes.');
+    throw error;
+  };
+}
+
 const rebuildDB = async () => {
   try {
     client.connect();
@@ -183,6 +233,7 @@ const rebuildDB = async () => {
     await createInitialUsers();
     await createInitialStorageLocations();
     await createInitialItems();
+    await createInitialBoxes();
   } catch (error) {
     console.error('Error during rebuildDB.');
     throw error;
