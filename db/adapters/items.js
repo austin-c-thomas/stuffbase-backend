@@ -10,7 +10,7 @@ const createItem = async ({
   imageURL, 
   userId,
   locationId }) => {
-    
+
   try {
     const { rows: [newItem] } = await client.query(`
       INSERT INTO items(name, description, category, quantity, "imageURL", "userId", "locationId")
@@ -31,7 +31,6 @@ const getItemById = async (id) => {
       FROM items
       WHERE id=$1;
     `, [id]);
-
     return item;
   } catch (error) {
     throw error;

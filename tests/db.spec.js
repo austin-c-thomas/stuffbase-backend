@@ -24,6 +24,7 @@ const {
   getItemsByLocation, 
   getItemsByUserId,
   updateItem,
+  destroyItem,
 } = require('../db/adapters/items');
 
 describe('Database', () => {
@@ -182,25 +183,25 @@ describe('Database', () => {
   // Items
   describe('Items', () => {
     const testItem = { id: 1, name: 'Christmas Tree', description: 'Fake white Christmas Tree', category: 'Christmas Decorations', userId: 1, locationId: 3 }
+    const itemToCreate = { name: 'Small Crate', description: `Hex's small dog crate`, category: 'Pets', userId: 1, locationId: 3 }
+    let itemToCreateAndDestroy = null;
     describe('createItem', () => {
-      const itemToCreate = { name: 'Small Crate', description: `Hex's small dog crate`, category: 'Pets', userId: 1, locationId: 3 }
-      let newItem = null;
       beforeAll(async () => {
-        newItem = await createItem(itemToCreate);
+        itemToCreateAndDestroy = await createItem(itemToCreate);
       });
 
       it('Creates a new item in the db', () => {
-        expect(newItem).toBeDefined();
-        expect(newItem.name).toEqual(itemToCreate.name);
-        expect(newItem.description).toEqual(itemToCreate.description);
+        expect(itemToCreateAndDestroy).toBeDefined();
+        expect(itemToCreateAndDestroy.name).toEqual(itemToCreate.name);
+        expect(itemToCreateAndDestroy.description).toEqual(itemToCreate.description);
       });
 
       it('Creates the new item under the correct user', () => {
-        expect(newItem.userId).toBe(itemToCreate.userId);
+        expect(itemToCreateAndDestroy.userId).toBe(itemToCreate.userId);
       });
 
       it('If no quantity is supplied, sets the default value as 1', () => {
-        expect(newItem.quantity).toEqual(1);
+        expect(itemToCreateAndDestroy.quantity).toEqual(1);
       });
     });
 
@@ -289,7 +290,24 @@ describe('Database', () => {
     });
 
     describe('destroyItem', () => {
-      const dummyItem = {  }
+      let deletedItem = null;
+      beforeAll(async () => {
+        deletedItem = await destroyItem(itemToCreateAndDestroy);
+      });
+
+      it('Returns the correct destroyed item', () => {
+        expect(deletedItem).toBeDefined();
+        expect(deletedItem.id).toBe(itemToCreateAndDestroy.id);
+      });
+
+      it('Permanently deletes the item from the db', async () => {
+        const { rows: [item] } = await client.query(`
+          SELECT *
+          FROM items
+          WHERE id=$1;
+        `, [deletedItem.id]);
+        expect(item).toBeUndefined();
+      })
     });
   });
 });
