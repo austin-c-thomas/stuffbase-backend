@@ -4,9 +4,9 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = process.env;
 
 const {
-  createUser,
+  createUser, 
+  getUserByUsername,
 } = require('../../db');
-const { passwordStrengthCheck } = require('../../utils');
 
 usersRouter.use((req, res, next) => {
   console.log('A request is being made to /users...');
@@ -14,14 +14,35 @@ usersRouter.use((req, res, next) => {
 });
 
 // Register
-usersRouter.post('/register', (req, res, next) => {
-  const { email, password, displayName } = req.body;
+usersRouter.post('/register', async (req, res, next) => {
+  const { username, email, password } = req.body;
   try {
-    passwordStrengthCheck(password);
+    const _user = await getUserByUsername(username);
+    if (_user) {
+      next({
+        name: 'UserExistsError',
+        message: 'A user with that username already exists.'
+      });
+      return;
+    };
+    
+    const user = await createUser({
+      username: username,
+      email: email,
+      password: password
+    });
+
+    const token = jwt.sign({ id: user.id, username }, JWT_SECRET, { expiresIn: '1w' });
+    res.send({
+      message: 'Thank you for signing up!',
+      user,
+      token,
+    });
   } catch ({ name, message }) {
     next({ name, message });
   };
 });
+
 // Login
 
 // Admin Routes

@@ -5,7 +5,6 @@ const { passwordStrengthCheck } = require('../../utils');
 const createUser = async ({ username, password, email }) => {
   // Check that password meets strength parameters
   passwordStrengthCheck(password);
-  
   // Ensure uniqueness by lowercasing username and email
   const usernameCased = username.toLowerCase();
   const emailCased = email.toLowerCase();
@@ -68,10 +67,6 @@ const getUserByUsername = async (username) => {
       FROM users
       WHERE username=$1;
     `, [usernameCased]);
-    
-    if (!user) {
-      throw Error('Username does not exist.')
-    };
 
     return user;
   } catch (error) {

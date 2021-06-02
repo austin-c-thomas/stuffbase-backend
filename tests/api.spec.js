@@ -24,17 +24,23 @@ describe('API', () => {
 
   // Users
   describe('Users', () => {
-    const validUserData = { email: 'johnsnow@thenorth.com', password: 'Ilovewolves99', displayName: 'John Snow' };
-    const badPasswordData = { email: 'nedstark@thenorth.com', password: 'ilovewolves', displayName: 'Ned Stark' }
+    const validUserData = { username: 'JohnSnow', email: 'johnsnow@thenorth.com', password: 'Ilovewolves99' };
+    const badPasswordData = { username: 'NedStark', email: 'nedstark@thenorth.com', password: 'ilovewolves' };
     let userToCreateAndUpdate = null;
     describe('POST /users/register', () => {
       beforeAll(async () => {
         const { data } = await axios.post(`${API_URL}/api/users/register`, validUserData);
         userToCreateAndUpdate = data;
-        console.log(userToCreateAndUpdate);
       });
+
       it('Successfully registers a user', () => {
         expect(userToCreateAndUpdate).toBeDefined();
+      });
+
+      it('Throws an error if the password does not meet strength params', async () => {
+        expect.assertions(1);
+        await expect(axios.post(`${API_URL}/api/users/register`, badPasswordData)).rejects.toEqual(Error('Request failed with status code 500'))
+        
       });
     });
   });
