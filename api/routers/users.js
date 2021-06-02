@@ -5,7 +5,7 @@ const { JWT_SECRET } = process.env;
 
 const {
   createUser, 
-  getUserByUsername,
+  getUserByEmail,
 } = require('../../db');
 
 usersRouter.use((req, res, next) => {
@@ -15,24 +15,24 @@ usersRouter.use((req, res, next) => {
 
 // Register
 usersRouter.post('/register', async (req, res, next) => {
-  const { username, email, password } = req.body;
+  const { email, password, displayName } = req.body;
   try {
-    const _user = await getUserByUsername(username);
+    const _user = await getUserByEmail(email);
     if (_user) {
       next({
         name: 'UserExistsError',
-        message: 'A user with that username already exists.'
+        message: 'A user with that email already exists.'
       });
       return;
     };
     
     const user = await createUser({
-      username: username,
       email: email,
-      password: password
+      password: password,
+      displayName: displayName
     });
 
-    const token = jwt.sign({ id: user.id, username }, JWT_SECRET, { expiresIn: '1w' });
+    const token = jwt.sign({ id: user.id, email }, JWT_SECRET, { expiresIn: '1w' });
     res.send({
       message: 'Thank you for signing up!',
       user,

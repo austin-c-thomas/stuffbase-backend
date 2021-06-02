@@ -24,8 +24,8 @@ describe('API', () => {
 
   // Users
   describe('Users', () => {
-    const validUserData = { username: 'JohnSnow', email: 'johnsnow@thenorth.com', password: 'Ilovewolves99' };
-    const badPasswordData = { username: 'NedStark', email: 'nedstark@thenorth.com', password: 'ilovewolves' };
+    const validUserData = { displayName: 'John Snow', email: 'johnsnow@thenorth.com', password: 'Ilovewolves99' };
+    const badPasswordData = { displayName: 'Ned Stark', email: 'nedstark@thenorth.com', password: 'ilovewolves' };
     let userToCreateAndUpdate = null;
     describe('POST /users/register', () => {
       beforeAll(async () => {

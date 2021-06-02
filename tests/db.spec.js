@@ -43,6 +43,7 @@ describe('Database', () => {
     const testUser = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
     describe('createUser', () => {
       const userToCreate = { email: 'createduser@test.com', password: 'Password19', displayName: 'CreatedUser' };
+      const badEmail = { email: 'createduser@testdotcom', password: 'iLoveStuffBase1', displayName: 'CreatedUser' };
       const badPassOne = {email: 'badpass@test.com', password: 'Pass19', displayName: 'CreatedUser' };
       const badPassTwo = {email: 'badpass@test.com', password: 'PASSWORD19', displayName: 'CreatedUser' };
       const badPassThree = {email: 'badpass@test.com', password: 'password19', displayName: 'CreatedUser' };
@@ -63,6 +64,11 @@ describe('Database', () => {
         await expect(createUser(badPassTwo)).rejects.toEqual(Error('Password must include at least one lowercase letter.'));
         await expect(createUser(badPassThree)).rejects.toEqual(Error('Password must include at least one uppercase letter.'));
         await expect(createUser(badPassFour)).rejects.toEqual(Error('Password must include at least one number.'));
+      });
+
+      it('Validates the email format', async () => {
+        expect.assertions(1);
+        await expect(createUser(badEmail)).rejects.toEqual(Error('Invalid email format.'));
       });
 
       it('Enforces uniqueness of the email', async () => {
@@ -101,8 +107,19 @@ describe('Database', () => {
 
     describe('updateUser', () => {
       const updatedEmail = { id: 1, email: 'testuser2@test.com', password: 'iLoveStuffBase1' };
+      const badEmail = { id: 1, email: 'testuser2attest.com', password: 'iLoveStuffBase1' };
       const updatedPassword = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase2' };
       
+      it('Validates the email format', async () => {
+        const { rows: [userToUpdate] } = await client.query(`
+        SELECT *
+        FROM users
+        WHERE id=$1;
+      `, [updatedEmail.id]);
+        expect.assertions(1);
+        await expect(updateUser(badEmail)).rejects.toEqual(Error('Invalid email format.'));
+      });
+
       it(`Successfully updates the user's email`, async () => {
         const { rows: [userToUpdate] } = await client.query(`
           SELECT *

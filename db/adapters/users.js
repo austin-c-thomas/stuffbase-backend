@@ -1,12 +1,13 @@
 const client = require('../client');
 const bcrypt = require('bcrypt');
-const { passwordStrengthCheck } = require('../../utils');
+const { passwordStrengthCheck, validateEmailFormat } = require('../../utils');
 
 const createUser = async ({ email, password, displayName }) => {
   // Check that password meets strength parameters
   passwordStrengthCheck(password);
-  // Ensure uniqueness by lowercasing email
+  // Ensure uniqueness by lowercasing email & check format
   const emailCased = email.toLowerCase();
+  validateEmailFormat(email);
 
   // Password encrypter
   const SALT_COUNT = 10;
@@ -111,6 +112,7 @@ const updateUser = async ({ id, email, password }) => {
   let newHashedPassword;
 
   if (!sameEmail) {
+    validateEmailFormat(email);
     updateFields.email = emailCased;
   };
 
