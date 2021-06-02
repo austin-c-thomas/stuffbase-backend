@@ -63,21 +63,6 @@ const getBoxById = async (id) => {
   };
 };
 
-// const getBoxById = async (userId, id) => {
-//   try {
-//     const userBoxes = await getBoxesByUserId(userId);
-//     const box = userBoxes.find((box) => box.id === id);
-
-//     if (!box) {
-//       throw Error('There is no box with that ID.');
-//     };
-
-//     return box;
-//   } catch (error) {
-//     throw error;
-//   };
-// };
-
 const getBoxesByLocationId = async (locationId) => {
   try {
     const locationExists = await getStorageLocationById(locationId);
@@ -187,6 +172,21 @@ const reduceBoxes = (boxItemPairs) => {
   }, {});
   return Object.values(boxesWithItems);
 };
+
+// const getUserBoxById = async (userId, id) => {
+//   try {
+//     const userBoxes = await getBoxesByUserId(userId);
+//     const box = userBoxes.find((box) => box.id === id);
+
+//     if (!box) {
+//       throw Error('There is no box with that ID.');
+//     };
+
+//     return box;
+//   } catch (error) {
+//     throw error;
+//   };
+// };
 
 module.exports = {
   createBox,

@@ -1,50 +1,34 @@
-require('dotenv').config();
 const client = require('../db/client');
 const { rebuildDB } = require('../db/seedData');
-const { 
-  expect, 
-  describe, 
-  it, 
-  beforeAll } = require('@jest/globals');
+require('dotenv').config();
 
 const { 
   createUser,
   getUser,
   updateUser,
-} = require('../db/adapters/users');
-
-const { 
   createStorageLocation, 
   getStorageLocationById, 
-  updateStorageLocation 
-} = require('../db/adapters/storage_locations');
-
-const {
+  updateStorageLocation, 
   createItem, 
   getItemById, 
   getItemsByLocationId, 
   getItemsByUserId,
   updateItem,
   destroyItem,
-} = require('../db/adapters/items');
-
-const {
   createBox, 
   getBoxById, 
   getBoxesByUserId, 
   getBoxesByLocationId,
   updateBox,
   destroyBox,
-} = require('../db/adapters/boxes');
-
-const { 
   createBoxItem, 
   getBoxItemByItemId, 
   getBoxItemsByBoxId, 
   updateBoxItem,
   destroyBoxItem
-} = require('../db/adapters/box_items');
+} = require('../db');
 
+// Database Tests
 describe('Database', () => {
   beforeAll(async () => {
     await rebuildDB();
