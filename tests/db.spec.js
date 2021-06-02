@@ -40,14 +40,14 @@ describe('Database', () => {
 
   // Users
   describe('Users', () => {
-    const testUser = { id: 1, username: 'TestUser1', email: 'testuser@test.com', password: 'iLoveStuffBase1' };
+    const testUser = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
     describe('createUser', () => {
-      const userToCreate = { username: 'CreatedUser', email: 'createduser@test.com', password: 'Password19' };
-      const badPassOne = { username: 'CreatedUser', email: 'badpass@test.com', password: 'Pass19' };
-      const badPassTwo = { username: 'CreatedUser', email: 'badpass@test.com', password: 'PASSWORD19' };
-      const badPassThree = { username: 'CreatedUser', email: 'badpass@test.com', password: 'password19' };
-      const badPassFour = { username: 'CreatedUser', email: 'badpass@test.com', password: 'Password' };
-      const duplicateUsername = { username: 'CreatedUser', email: 'createduser2@test.com', password: 'Password19' };
+      const userToCreate = { email: 'createduser@test.com', password: 'Password19', displayName: 'CreatedUser' };
+      const badPassOne = {email: 'badpass@test.com', password: 'Pass19', displayName: 'CreatedUser' };
+      const badPassTwo = {email: 'badpass@test.com', password: 'PASSWORD19', displayName: 'CreatedUser' };
+      const badPassThree = {email: 'badpass@test.com', password: 'password19', displayName: 'CreatedUser' };
+      const badPassFour = {email: 'badpass@test.com', password: 'Password', displayName: 'CreatedUser' };
+      const duplicateEmail = {email: 'createduser@test.com', password: 'Password19', displayName: 'CreatedUser2' };
       let createdUser = null;
       beforeAll(async () => {
         createdUser = await createUser(userToCreate);
@@ -67,7 +67,7 @@ describe('Database', () => {
 
       it('Enforces uniqueness of the email', async () => {
         expect.assertions(1);
-        await expect(createUser(duplicateUsername)).rejects.toEqual(Error('A user with that username already exists.'));
+        await expect(createUser(duplicateEmail)).rejects.toEqual(Error('A user with that email already exists.'));
       });
 
       it('Stores the hashed password in the database', async () => {
@@ -77,19 +77,6 @@ describe('Database', () => {
         `, [createdUser.id]);
         expect(dbUser.password).toBeTruthy();
         expect(dbUser.password).not.toBe(userToCreate.password);
-      });
-
-      it('Stores the hashed email in the database', async () => {
-        const { rows: [dbUser] } = await client.query(`
-          SELECT * FROM users
-          WHERE id=$1;
-        `, [createdUser.id]);
-        expect(dbUser.email).toBeTruthy();
-        expect(dbUser.email).not.toBe(userToCreate.email);
-      });
-
-      it(`Returns the user's unencrypted email`, () => {
-        expect(createdUser.email).toEqual(userToCreate.email);
       });
 
       it(`Returns the user's information without the password`, () => {
@@ -113,7 +100,7 @@ describe('Database', () => {
     });
 
     describe('updateUser', () => {
-      const updatedEmail = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1' };
+      const updatedEmail = { id: 1, email: 'testuser2@test.com', password: 'iLoveStuffBase1' };
       const updatedPassword = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase2' };
       
       it(`Successfully updates the user's email`, async () => {

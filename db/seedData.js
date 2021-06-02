@@ -30,9 +30,9 @@ const createTables = async () => {
     await client.query(`
       CREATE TABLE users (
         id SERIAL PRIMARY KEY,
-        username VARCHAR(255) UNIQUE NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        password VARCHAR(255) NOT NULL
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        "displayName" VARCHAR(255) NOT NULL
       );
     `)
 
@@ -88,9 +88,9 @@ const createInitialUsers = async () => {
   try {
     // console.log('Creating initial users...');
     await createUser({
-      username: 'TestUser1',
-      password: 'iLoveStuffBase1', 
       email: 'testuser@test.com', 
+      password: 'iLoveStuffBase1', 
+      displayName: 'TestUser1',
     });
     
     // console.log('Finished creating initial users.')

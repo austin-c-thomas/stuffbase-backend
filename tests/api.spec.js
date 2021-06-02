@@ -39,8 +39,7 @@ describe('API', () => {
 
       it('Throws an error if the password does not meet strength params', async () => {
         expect.assertions(1);
-        await expect(axios.post(`${API_URL}/api/users/register`, badPasswordData)).rejects.toEqual(Error('Request failed with status code 500'))
-        
+        await expect(axios.post(`${API_URL}/api/users/register`, badPasswordData)).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
   });

@@ -2,37 +2,35 @@ const client = require('../client');
 const bcrypt = require('bcrypt');
 const { passwordStrengthCheck } = require('../../utils');
 
-const createUser = async ({ username, password, email }) => {
+const createUser = async ({ email, password, displayName }) => {
   // Check that password meets strength parameters
   passwordStrengthCheck(password);
-  // Ensure uniqueness by lowercasing username and email
-  const usernameCased = username.toLowerCase();
+  // Ensure uniqueness by lowercasing email
   const emailCased = email.toLowerCase();
 
-  // Password and email encrypter
+  // Password encrypter
   const SALT_COUNT = 10;
   const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
-  const hashedEmail = await bcrypt.hash(emailCased, SALT_COUNT);
 
   try {
     const { rows: [user] } = await client.query(`
-      INSERT INTO users(username, email, password)
+      INSERT INTO users(email, password, "displayName")
       VALUES($1, $2, $3)
-      ON CONFLICT (username) DO NOTHING
+      ON CONFLICT (email) DO NOTHING
       RETURNING *;
-    `, [usernameCased, hashedEmail, hashedPassword]);
+    `, [emailCased, hashedPassword, displayName]);
     
     if (!user) {
-      throw Error('A user with that username already exists.');
+      throw Error('A user with that email already exists.');
     };
 
     if (user.password) {
       delete user.password;
     };
 
-    if (user.email) {
-      user.email = emailCased;
-    };
+    // if (user.email) {
+    //   user.email = emailCased;
+    // };
 
     return user;
   } catch (error) {
@@ -59,14 +57,14 @@ const getUserById = async (id) => {
   };
 };
 
-const getUserByUsername = async (username) => {
-  const usernameCased = username.toLowerCase();
+const getUserByEmail = async (email) => {
+  const emailCased = email.toLowerCase();
   try {
     const { rows: [user] } = await client.query(`
       SELECT *
       FROM users
-      WHERE username=$1;
-    `, [usernameCased]);
+      WHERE email=$1;
+    `, [emailCased]);
 
     return user;
   } catch (error) {
@@ -80,19 +78,12 @@ const getUser = async ({ id, email, password }) => {
   try {
     const user = await getUserById(id);
     const hashedPassword = user.password;
-    const hashedEmail = user.email;
 
     const passwordsMatch = await bcrypt.compare(password, hashedPassword);
     if (!passwordsMatch) {
       throw Error('Password incorrect.');
     };
 
-    const emailsMatch = await bcrypt.compare(emailCased, hashedEmail);
-    if (!emailsMatch) {
-      throw Error('Email incorrect.');
-    };
-
-    user.email = emailCased;
     delete user.password;
     return user;
   } catch (error) {
@@ -104,27 +95,23 @@ const getUser = async ({ id, email, password }) => {
 const updateUser = async ({ id, email, password }) => {
   const user = await getUserById(id);
   const emailCased = email.toLowerCase();
-  const hashedEmail = user.email;
   const hashedPassword = user.password;
 
   // If the email or password is the same, dont re-encrypt it
-  const sameEmail = await bcrypt.compare(emailCased, hashedEmail);
+  const sameEmail = emailCased === user.email;
   const samePassword = await bcrypt.compare(password, hashedPassword);
   if (sameEmail && samePassword) {
-    user.email = emailCased;
     delete user.password;
     return user;
   };
 
-  // If a field has changed, it must be re-encrypted before updated the DB
+  // If the password has changed, it must be re-encrypted before updated the DB
   const updateFields = {};
   const SALT_COUNT = 10;
-  let newHashedEmail;
   let newHashedPassword;
 
   if (!sameEmail) {
-    newHashedEmail = await bcrypt.hash(emailCased, SALT_COUNT);
-    updateFields.email = newHashedEmail;
+    updateFields.email = emailCased;
   };
 
   if (!samePassword) {
@@ -134,7 +121,7 @@ const updateUser = async ({ id, email, password }) => {
     updateFields.password = newHashedPassword;
   };
 
-  // Only update the fields that have changed
+  // // Only update the fields that have changed
   const setString = Object.keys(updateFields).map((key, index) => {
     return `"${key}"=$${index + 1}`
   }).join(', ');
@@ -147,7 +134,6 @@ const updateUser = async ({ id, email, password }) => {
       RETURNING *;
     `, Object.values(updateFields));
     
-    updatedUser.email = emailCased;
     delete updatedUser.password;
     return updatedUser;
   } catch (error) {
@@ -167,7 +153,7 @@ const updateUser = async ({ id, email, password }) => {
 module.exports = {
   createUser,
   getUserById,
-  getUserByUsername,
+  getUserByEmail,
   getUser,
   updateUser,
 }
