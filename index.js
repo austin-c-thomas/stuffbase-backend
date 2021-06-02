@@ -1,11 +1,10 @@
 // Express Server
-
 // Server
 require('dotenv').config();
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
-// const apiRouter = require('./api');
+const apiRouter = require('./api');
 const client = require('./db/client');
 
 const PORT = process.env.PORT || 3000;
@@ -18,7 +17,7 @@ server.use(express.urlencoded({ extended: false }));
 server.use(cors());
 
 // API Router
-// server.use('/api', apiRouter);
+server.use('/api', apiRouter);
 
 // Error Handling
 // 404
