@@ -8,7 +8,7 @@ const { createBoxItem } = require('./adapters/box_items');
 
 const dropTables = async () => {
   try {
-    console.log('Dropping tables...');
+    // console.log('Dropping tables...');
     await client.query(`
       DROP TABLE IF EXISTS box_items;
       DROP TABLE IF EXISTS items;
@@ -17,7 +17,7 @@ const dropTables = async () => {
       DROP TABLE IF EXISTS users;
     `);
 
-    console.log('Finished dropping tables.');
+    // console.log('Finished dropping tables.');
   } catch (error) {
     console.error('Error dropping tables.');
     throw error;
@@ -26,13 +26,13 @@ const dropTables = async () => {
 
 const createTables = async () => {
   try {
-    console.log('Building tables...');
+    // console.log('Building tables...');
     await client.query(`
       CREATE TABLE users (
         id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        "displayName" VARCHAR(255) NOT NULL
+        username VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL
       );
     `)
 
@@ -77,7 +77,7 @@ const createTables = async () => {
       );
     `);
 
-    console.log('Finished building tables.');
+    // console.log('Finished building tables.');
   } catch (error) {
     console.error('Error building tables.');
     throw error;
@@ -86,14 +86,14 @@ const createTables = async () => {
 
 const createInitialUsers = async () => {
   try {
-    console.log('Creating initial users...');
+    // console.log('Creating initial users...');
     await createUser({
-      email: 'testuser@test.com', 
+      username: 'TestUser1',
       password: 'iLoveStuffBase1', 
-      displayName: 'Test User'
+      email: 'testuser@test.com', 
     });
     
-    console.log('Finished creating initial users.')
+    // console.log('Finished creating initial users.')
   } catch (error) {
     console.error('Error creating initial users.');
     throw error;
@@ -102,7 +102,7 @@ const createInitialUsers = async () => {
 
 const createInitialStorageLocations = async () => {
   try {
-    console.log('Creating initial storage locations...');
+    // console.log('Creating initial storage locations...');
     await createStorageLocation({
       userId: 1,
       name: 'Small outdoor closet',
@@ -122,7 +122,7 @@ const createInitialStorageLocations = async () => {
       location: 'Remote',
     });
 
-    console.log('Finished creating initial storage locations.')
+    // console.log('Finished creating initial storage locations.')
   } catch (error) {
     console.error('Error creating initial storage locations.');
     throw error;
@@ -131,7 +131,7 @@ const createInitialStorageLocations = async () => {
 
 const createInitialItems = async () => {
   try {
-    console.log('Creating initial items...');
+    // console.log('Creating initial items...');
     await createItem({
       name: 'Christmas Tree',
       description: 'Fake white Christmas Tree',
@@ -219,7 +219,7 @@ const createInitialItems = async () => {
       locationId: 1,
     });
 
-    console.log('Finished creating initial items.');
+    // console.log('Finished creating initial items.');
   } catch (error) {
     console.error('Error creating initial items.');
     throw error;
@@ -228,7 +228,7 @@ const createInitialItems = async () => {
 
 createInitialBoxes = async () => {
   try {
-    console.log('Creating initial boxes...');
+    // console.log('Creating initial boxes...');
     await createBox({
       label: 'Halloween Decor',
       description: '2 x 4 Plastic Tub',
@@ -267,7 +267,7 @@ createInitialBoxes = async () => {
       locationId: 3,
     });
 
-    console.log('Finished creating initial boxes.')
+    // console.log('Finished creating initial boxes.')
   } catch (error) {
     console.error('Error creating initial boxes.');
     throw error;
@@ -276,7 +276,7 @@ createInitialBoxes = async () => {
 
 const createInitialBoxItems = async () => {
   try {
-    console.log('Creating initial box items...');
+    // console.log('Creating initial box items...');
     await createBoxItem({
       boxId: 1,
       itemId: 10,
@@ -302,7 +302,7 @@ const createInitialBoxItems = async () => {
       itemId: 7,
     });
 
-    console.log('Finished creating initial box items.');
+    // console.log('Finished creating initial box items.');
   } catch (error) {
     console.error('Error creating initial box items.');
     throw error;

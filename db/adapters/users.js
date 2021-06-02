@@ -2,11 +2,12 @@ const client = require('../client');
 const bcrypt = require('bcrypt');
 const { passwordStrengthCheck } = require('../../utils');
 
-const createUser = async ({ email, password, displayName }) => {
+const createUser = async ({ username, password, email }) => {
   // Check that password meets strength parameters
   passwordStrengthCheck(password);
   
-  // Ensure uniqueness by lowercasing email
+  // Ensure uniqueness by lowercasing username and email
+  const usernameCased = username.toLowerCase();
   const emailCased = email.toLowerCase();
 
   // Password and email encrypter
@@ -16,11 +17,15 @@ const createUser = async ({ email, password, displayName }) => {
 
   try {
     const { rows: [user] } = await client.query(`
-      INSERT INTO users(email, password, "displayName")
+      INSERT INTO users(username, email, password)
       VALUES($1, $2, $3)
-      ON CONFLICT (email) DO NOTHING
+      ON CONFLICT (username) DO NOTHING
       RETURNING *;
-    `, [hashedEmail, hashedPassword, displayName]);
+    `, [usernameCased, hashedEmail, hashedPassword]);
+    
+    if (!user) {
+      throw Error('A user with that username already exists.');
+    };
 
     if (user.password) {
       delete user.password;
@@ -55,16 +60,30 @@ const getUserById = async (id) => {
   };
 };
 
-const getUser = async ({ id, email, password }) => {
-  const emailCased = email.toLowerCase();
-
+const getUserByUsername = async (username) => {
+  const usernameCased = username.toLowerCase();
   try {
     const { rows: [user] } = await client.query(`
       SELECT *
       FROM users
-      WHERE id=$1;
-    `, [id]);
+      WHERE username=$1;
+    `, [usernameCased]);
+    
+    if (!user) {
+      throw Error('Username does not exist.')
+    };
 
+    return user;
+  } catch (error) {
+    throw error;
+  };
+};
+
+const getUser = async ({ id, email, password }) => {
+  const emailCased = email.toLowerCase();
+
+  try {
+    const user = await getUserById(id);
     const hashedPassword = user.password;
     const hashedEmail = user.email;
 
@@ -153,6 +172,7 @@ const updateUser = async ({ id, email, password }) => {
 module.exports = {
   createUser,
   getUserById,
+  getUserByUsername,
   getUser,
   updateUser,
 }
