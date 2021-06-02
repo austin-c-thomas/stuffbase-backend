@@ -413,6 +413,11 @@ describe('Database', () => {
         const boxesWithCorrectId = boxesFromAdapter.filter((box) => box.userId === validUserId);
         expect(boxesWithCorrectId.length).toBe(boxesFromAdapter.length);
       });
+
+      it('Returns boxes with an items property, which is an array', () => {
+        expect(Array.isArray(boxesFromAdapter[0].items)).toBe(true);
+        expect(Array.isArray(boxesFromAdapter[boxesFromAdapter.length - 1].items)).toBe(true);
+      });
     });
 
     describe('updateBox', () => {

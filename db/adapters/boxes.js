@@ -22,6 +22,29 @@ const createBox = async ({
   };
 };
 
+const getBoxesByUserId = async (userId) => {
+  try {
+    const userExists = await getUserById(userId);
+
+    if (userExists) {
+      const { rows: boxData } = await client.query(`
+        SELECT boxes.id, boxes.label, boxes.description, boxes.category, boxes."userId", boxes."locationId",
+        box_items."itemId", items.name, items.description AS "itemDescription", items.category AS "itemCategory",
+        items.quantity, items."imageURL"
+        FROM boxes
+        LEFT JOIN box_items ON box_items."boxId" = boxes.id
+        LEFT JOIN items on items.id = box_items."itemId"
+        WHERE boxes."userId"=$1;
+      `, [userId]);
+
+      const boxes = reduceBoxes(boxData);
+      return boxes;
+    };
+  } catch (error) {
+    throw error;
+  };
+};
+
 const getBoxById = async (id) => {
   try {
     const { rows: [box] } = await client.query(`
@@ -40,6 +63,21 @@ const getBoxById = async (id) => {
   };
 };
 
+// const getBoxById = async (userId, id) => {
+//   try {
+//     const userBoxes = await getBoxesByUserId(userId);
+//     const box = userBoxes.find((box) => box.id === id);
+
+//     if (!box) {
+//       throw Error('There is no box with that ID.');
+//     };
+
+//     return box;
+//   } catch (error) {
+//     throw error;
+//   };
+// };
+
 const getBoxesByLocationId = async (locationId) => {
   try {
     const locationExists = await getStorageLocationById(locationId);
@@ -51,24 +89,6 @@ const getBoxesByLocationId = async (locationId) => {
         WHERE "locationId"=$1;
       `, [locationId]);
 
-      return boxList;
-    };
-  } catch (error) {
-    throw error;
-  };
-};
-
-const getBoxesByUserId = async (userId) => {
-  try {
-    const userExists = await getUserById(userId);
-
-    if (userExists) {
-      const { rows: boxList } = await client.query(`
-        SELECT *
-        FROM boxes
-        WHERE "userId"=$1;
-      `, [userId]);
-      
       return boxList;
     };
   } catch (error) {
@@ -119,21 +139,54 @@ const destroyBox = async ({ id }) => {
   };
 };
 
-const attachItemsToBoxes = async () => {
-  try {
-    
-  } catch (error) {
-    throw error;
-  };
-};
+// Helper function to attach box items to boxes
+const reduceBoxes = (boxItemPairs) => {
+  const boxesWithItems = boxItemPairs.reduce((boxAccumulator, box) => {
+    const {
+      id,
+      label,
+      description,
+      category,
+      userId,
+      locationId,
+      itemId,
+      name,
+      itemDescription,
+      itemCategory,
+      quantity,
+      imageURL
+    } = box;
 
-// const getBoxByItemId = async (id) => {
-//   try {
-    
-//   } catch (error) {
-//     throw error;
-//   };
-// };
+    const item = {
+      id: itemId,
+      name,
+      description: itemDescription,
+      category: itemCategory,
+      quantity,
+      imageURL,
+      userId,
+      locationId
+    }
+
+    if (!boxAccumulator[id]) {
+      boxAccumulator[id] = {
+        id,
+        label,
+        description,
+        category,
+        userId,
+        locationId,
+        items: itemId ? [item] : [],
+      };
+    } else {
+      if (itemId) {
+        boxAccumulator[id].items.push(item);
+      };
+    };
+    return boxAccumulator;
+  }, {});
+  return Object.values(boxesWithItems);
+};
 
 module.exports = {
   createBox,
