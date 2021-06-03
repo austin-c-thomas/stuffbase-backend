@@ -13,6 +13,13 @@ const passwordStrengthCheck = (password) => {
   };
 }; 
 
+const validateEmailFormat = (email) => {
+  if (!email.match(/[@]/g) || !email.match(/[\.]/g)) {
+    throw Error('Invalid email format.');
+  };
+};
+
 module.exports = {
   passwordStrengthCheck,
+  validateEmailFormat,
 }

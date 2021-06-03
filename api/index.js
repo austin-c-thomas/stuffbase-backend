@@ -43,4 +43,7 @@ apiRouter.use((req, res, next) => {
 const healthRouter = require('./routers/health');
 apiRouter.use('/health', healthRouter);
 
+const usersRouter = require('./routers/users');
+apiRouter.use('/users', usersRouter);
+
 module.exports = apiRouter;

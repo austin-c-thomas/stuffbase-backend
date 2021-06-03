@@ -25,7 +25,8 @@ const {
   getBoxItemByItemId, 
   getBoxItemsByBoxId, 
   updateBoxItem,
-  destroyBoxItem
+  destroyBoxItem,
+  getStorageLocationsByUserId
 } = require('../db');
 
 // Database Tests
@@ -40,13 +41,15 @@ describe('Database', () => {
 
   // Users
   describe('Users', () => {
-    const testUser = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'Test User'};
+    const testUser = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
     describe('createUser', () => {
-      const userToCreate = {email: 'createduser@test.com', password: 'Password19', displayName: 'Created User'};
-      const badPassOne = {email: 'badpass@test.com', password: 'Pass19', displayName: 'Bad Pass'};
-      const badPassTwo = {email: 'badpass@test.com', password: 'PASSWORD19', displayName: 'Bad Pass'};
-      const badPassThree = {email: 'badpass@test.com', password: 'password19', displayName: 'Bad Pass'};
-      const badPassFour = {email: 'badpass@test.com', password: 'Password', displayName: 'Bad Pass'};
+      const userToCreate = { email: 'createduser@test.com', password: 'Password19', displayName: 'CreatedUser' };
+      const badEmail = { email: 'createduser@testdotcom', password: 'iLoveStuffBase1', displayName: 'CreatedUser' };
+      const badPassOne = {email: 'badpass@test.com', password: 'Pass19', displayName: 'CreatedUser' };
+      const badPassTwo = {email: 'badpass@test.com', password: 'PASSWORD19', displayName: 'CreatedUser' };
+      const badPassThree = {email: 'badpass@test.com', password: 'password19', displayName: 'CreatedUser' };
+      const badPassFour = {email: 'badpass@test.com', password: 'Password', displayName: 'CreatedUser' };
+      const duplicateEmail = {email: 'createduser@test.com', password: 'Password19', displayName: 'CreatedUser2' };
       let createdUser = null;
       beforeAll(async () => {
         createdUser = await createUser(userToCreate);
@@ -62,8 +65,17 @@ describe('Database', () => {
         await expect(createUser(badPassTwo)).rejects.toEqual(Error('Password must include at least one lowercase letter.'));
         await expect(createUser(badPassThree)).rejects.toEqual(Error('Password must include at least one uppercase letter.'));
         await expect(createUser(badPassFour)).rejects.toEqual(Error('Password must include at least one number.'));
+      });
 
-      })
+      it('Validates the email format', async () => {
+        expect.assertions(1);
+        await expect(createUser(badEmail)).rejects.toEqual(Error('Invalid email format.'));
+      });
+
+      it('Enforces uniqueness of the email', async () => {
+        expect.assertions(1);
+        await expect(createUser(duplicateEmail)).rejects.toEqual(Error('A user with that email already exists.'));
+      });
 
       it('Stores the hashed password in the database', async () => {
         const { rows: [dbUser] } = await client.query(`
@@ -72,19 +84,6 @@ describe('Database', () => {
         `, [createdUser.id]);
         expect(dbUser.password).toBeTruthy();
         expect(dbUser.password).not.toBe(userToCreate.password);
-      });
-
-      it('Stores the hashed email in the database', async () => {
-        const { rows: [dbUser] } = await client.query(`
-          SELECT * FROM users
-          WHERE id=$1;
-        `, [createdUser.id]);
-        expect(dbUser.email).toBeTruthy();
-        expect(dbUser.email).not.toBe(userToCreate.email);
-      });
-
-      it(`Returns the user's unencrypted email`, () => {
-        expect(createdUser.email).toEqual(userToCreate.email);
       });
 
       it(`Returns the user's information without the password`, () => {
@@ -108,9 +107,20 @@ describe('Database', () => {
     });
 
     describe('updateUser', () => {
-      const updatedEmail = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1' };
+      const updatedEmail = { id: 1, email: 'testuser2@test.com', password: 'iLoveStuffBase1' };
+      const badEmail = { id: 1, email: 'testuser2attest.com', password: 'iLoveStuffBase1' };
       const updatedPassword = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase2' };
       
+      it('Validates the email format', async () => {
+        const { rows: [userToUpdate] } = await client.query(`
+        SELECT *
+        FROM users
+        WHERE id=$1;
+      `, [updatedEmail.id]);
+        expect.assertions(1);
+        await expect(updateUser(badEmail)).rejects.toEqual(Error('Invalid email format.'));
+      });
+
       it(`Successfully updates the user's email`, async () => {
         const { rows: [userToUpdate] } = await client.query(`
           SELECT *
@@ -159,6 +169,23 @@ describe('Database', () => {
         const storageLocation = await getStorageLocationById(testLocation.id);
         expect(storageLocation.id).toEqual(testLocation.id);
         expect(storageLocation.name).toEqual(testLocation.name);
+      });
+    });
+
+    describe('getStorageLocationsByUserId', () => {
+      const userId = 1;
+      let storageLocationList = null;
+      beforeAll(async () => {
+        storageLocationList = await getStorageLocationsByUserId(userId);
+      });
+
+      it('Returns an array', () => {
+        expect(Array.isArray(storageLocationList)).toBe(true);
+      });
+
+      it('Returns only storage locations with the correct userId', () => {
+        const locationsWithCorrectId = storageLocationList.filter((location) => location.userId === userId);
+        expect(locationsWithCorrectId.length).toBe(storageLocationList.length);
       });
     });
 

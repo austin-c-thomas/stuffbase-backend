@@ -30,6 +30,7 @@ server.use('*', (req, res, next) => {
 server.use((error, req, res, next) => {
   res.status(500);
   res.send(error);
+  console.log('ERROR: ', error);
 });
 
 server.listen(PORT, () => {

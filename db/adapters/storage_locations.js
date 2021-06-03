@@ -32,6 +32,20 @@ const getStorageLocationById = async (id) => {
   };
 };
 
+const getStorageLocationsByUserId = async (userId) => {
+  try {
+    const { rows: storageLocationList } = await client.query(`
+      SELECT *
+      FROM storage_locations
+      WHERE "userId"=$1;
+    `, [userId]);
+
+    return storageLocationList;
+  } catch (error) {
+    throw error;
+  };
+};
+
 const updateStorageLocation = async (storageLocationUpdates) => {
   if (!storageLocationUpdates.id) {
     throw Error('You must supply the storage location ID in your request.')
@@ -72,5 +86,6 @@ const updateStorageLocation = async (storageLocationUpdates) => {
 module.exports = {
   createStorageLocation,
   getStorageLocationById,
+  getStorageLocationsByUserId,
   updateStorageLocation,
 }
