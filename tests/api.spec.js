@@ -148,7 +148,7 @@ describe('API', () => {
     });
 
     describe('PATCH /users/:userId', () => {
-      const userUpdates = { id: 2, email: 'johnsnow@thewall.com', password: 'Ilovewolves900', displayName: 'John Snow' }
+      const userUpdates = { id: 3, email: 'johnsnow@thewall.com', password: 'Ilovewolves900', displayName: 'John Snow' }
       let userPreUpdate = null;
       let token = null;
       let updatedUser = null;

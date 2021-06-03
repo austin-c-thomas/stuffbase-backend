@@ -74,7 +74,8 @@ const createTables = async () => {
     await client.query(`
       CREATE TABLE box_items (
         "itemId" INTEGER REFERENCES items(id) PRIMARY KEY,
-        "boxId" INTEGER REFERENCES boxes(id)
+        "boxId" INTEGER REFERENCES boxes(id),
+        "userId" INTEGER REFERENCES users(id)
       );
     `);
 
@@ -92,6 +93,12 @@ const createInitialUsers = async () => {
       email: 'testuser@test.com', 
       password: 'iLoveStuffBase1', 
       displayName: 'TestUser1',
+    });
+
+    await createUser({
+      email: 'bonybones@gmail.com',
+      password: 'TwistedBow99',
+      displayName: 'Bonybones',
     });
     
     // console.log('Finished creating initial users.')
@@ -121,6 +128,21 @@ const createInitialStorageLocations = async () => {
       userId: 1,
       name: '5x5 Storage Unit',
       location: 'Remote',
+    });
+
+    await createStorageLocation({
+      userId: 2,
+      name: 'Bank',
+    });
+
+    await createStorageLocation({
+      userId: 2,
+      name: 'Inventory',
+    });
+
+    await createStorageLocation({
+      userId: 2,
+      name: 'POH',
     });
 
     // console.log('Finished creating initial storage locations.')
@@ -220,6 +242,50 @@ const createInitialItems = async () => {
       locationId: 1,
     });
 
+    // 
+
+    await createItem({
+      name: 'Abyssal Whip',
+      category: 'Weapons',
+      userId: 2,
+      locationId: 5,
+    });
+
+    await createItem({
+      name: 'Bandos Chestplate',
+      category: 'Armor',
+      userId: 2,
+      locationId: 4,
+    });
+
+    await createItem({
+      name: 'Twisted Bow',
+      category: 'Weapons',
+      userId: 2,
+      locationId: 4,
+    });
+
+    await createItem({
+      name: 'Santa Hat',
+      category: 'Fashion',
+      userId: 2,
+      locationId: 4,
+    });
+
+    await createItem({
+      name: 'Rift Guardian',
+      category: 'Pets',
+      userId: 2,
+      locationId: 6,
+    });
+
+    await createItem({
+      name: 'Rune Pouch',
+      category: 'Magic',
+      userId: 2,
+      locationId: 5,
+    });
+
     // console.log('Finished creating initial items.');
   } catch (error) {
     console.error('Error creating initial items.');
@@ -268,6 +334,21 @@ createInitialBoxes = async () => {
       locationId: 3,
     });
 
+    // 
+
+    await createBox({
+      label: 'Looting Bag',
+      description: 'Black pouch',
+      userId: 2,
+      locationId: 5,
+    });
+
+    await createBox({
+      label: 'Bank Tab',
+      userId: 2,
+      locationId: 4,
+    });
+
     // console.log('Finished creating initial boxes.')
   } catch (error) {
     console.error('Error creating initial boxes.');
@@ -301,6 +382,32 @@ const createInitialBoxItems = async () => {
     await createBoxItem({
       boxId: 2,
       itemId: 7,
+    });
+
+    // 
+    await createBoxItem({
+      boxId: 6,
+      itemId: 13,
+    });
+
+    await createBoxItem({
+      boxId: 6,
+      itemId: 18,
+    });
+
+    await createBoxItem({
+      boxId: 7,
+      itemId: 14,
+    });
+
+    await createBoxItem({
+      boxId: 7,
+      itemId: 15,
+    });
+
+    await createBoxItem({
+      boxId: 7,
+      itemId: 16,
     });
 
     // console.log('Finished creating initial box items.');

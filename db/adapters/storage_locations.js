@@ -1,4 +1,5 @@
 const client = require('../client');
+const { getUserById } = require('./users');
 
 const createStorageLocation = async ({ userId, name, location = "Home", note }) => {
   try {
@@ -75,17 +76,24 @@ const updateStorageLocation = async (storageLocationUpdates) => {
   };
 };
 
-// const destroyStorageLocation = async () => {
-//   try {
+const destroyStorageLocation = async (id) => {
+  try {
+    const { rows: [deletedStorageLocation] } = await client.query(`
+      DELETE FROM storage_locations
+      WHERE id=$1
+      RETURNING *;
+    `, [id]);
 
-//   } catch(error) {
-//     throw error;
-//   };
-// };
+    return deletedStorageLocation;
+  } catch(error) {
+    throw error;
+  };
+};
 
 module.exports = {
   createStorageLocation,
   getStorageLocationById,
   getStorageLocationsByUserId,
   updateStorageLocation,
+  destroyStorageLocation,
 }

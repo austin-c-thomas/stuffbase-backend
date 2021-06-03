@@ -1,13 +1,23 @@
 const client = require('../client');
 const { getBoxById } = require('./boxes');
+const { getItemById } = require('./items');
 
 const createBoxItem = async ({ boxId, itemId }) => {
   try {
+    const box = await getBoxById(boxId);
+    const item = await getItemById(itemId);
+
+    if (box.userId !== item.userId) {
+      throw Error('Box and item must belong to the same user.')
+    };
+
+    const userId = Number(box.userId);
+
     const { rows: [newBoxItem] } = await client.query(`
-      INSERT INTO box_items("boxId", "itemId")
-      VALUES($1, $2)
+      INSERT INTO box_items("boxId", "itemId", "userId")
+      VALUES($1, $2, $3)
       RETURNING *;
-    `, [boxId, itemId]);
+    `, [boxId, itemId, userId]);
 
     return newBoxItem;
   } catch (error) {

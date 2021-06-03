@@ -57,17 +57,13 @@ const getItemsByLocationId = async (locationId) => {
 
 const getItemsByUserId = async (userId) => {
   try {
-    const userExists = await getUserById(userId);
+    const { rows: itemList } = await client.query(`
+      SELECT *
+      FROM items
+      WHERE "userId"=$1;
+    `, [userId]);
 
-    if (userExists) {
-      const { rows: itemList } = await client.query(`
-        SELECT *
-        FROM items
-        WHERE "userId"=$1;
-      `, [userId]);
-
-      return itemList;
-    };
+    return itemList;
   } catch (error) {
     throw error;
   };

@@ -27,7 +27,9 @@ const {
   updateBoxItem,
   destroyBoxItem,
   getStorageLocationsByUserId,
-  getUserByEmail
+  getUserByEmail,
+  destroyUser,
+  getUserById
 } = require('../db');
 
 // Database Tests
@@ -146,6 +148,33 @@ describe('Database', () => {
         expect(updatedUser.displayName).toEqual(updateMultiple.displayName);
         expect(updatedUser.email).not.toEqual(userToUpdate.email);
         expect(updatedUser.email).toEqual(updateMultiple.email);
+      });
+    });
+
+    describe('destroyUser', () => {
+      const userToDeleteId = 2;
+      let deletedUser;
+      beforeAll(async () => {
+        deletedUser = await destroyUser(userToDeleteId); 
+      });
+      
+      it('Returns the deleted user', () => {
+        expect(deletedUser).toBeDefined();
+        expect(deletedUser.id).toBe(userToDeleteId);
+      });
+
+      it(`Successfully deletes the user's boxes, items, box_items and storage locations`, async () => {
+        const userStorageLocations = await getStorageLocationsByUserId(userToDeleteId);
+        const userBoxes = await getBoxesByUserId(userToDeleteId);
+        const userItems = await getItemsByUserId(userToDeleteId);
+        expect(userStorageLocations).toEqual([]);
+        expect(userBoxes).toEqual([]);
+        expect(userItems).toEqual([]);
+      });
+
+      it('Successfully removes the user from the database', async () => {
+        expect.assertions(1);
+        await expect(getUserById(userToDeleteId)).rejects.toEqual(Error('There is no user with that ID.'));
       });
     });
   });
@@ -278,7 +307,6 @@ describe('Database', () => {
 
     describe('getItemsByUserId', () => {
       const validUserId = 1;
-      const invalidUserId = 1000;
       let itemsFromAdapter = null;
       beforeAll(async () => {
         itemsFromAdapter = await getItemsByUserId(validUserId);
@@ -286,11 +314,6 @@ describe('Database', () => {
 
       it('Returns an array, if the user exists', () => {
         expect(Array.isArray(itemsFromAdapter)).toBe(true);
-      });
-
-      it('Throws an error, if the user does not exist', async () => {
-        expect.assertions(1);
-        await expect(getItemsByUserId(invalidUserId)).rejects.toEqual(Error('There is no user with that ID.'));
       });
 
       it('Returns only items with the correct userId', () => {
@@ -410,7 +433,6 @@ describe('Database', () => {
 
     describe('getBoxesByUserId', () => {
       const validUserId = 1;
-      const invalidUserId = 1000;
       let boxesFromAdapter = null;
       beforeAll(async () => {
         boxesFromAdapter = await getBoxesByUserId(validUserId);
@@ -418,11 +440,6 @@ describe('Database', () => {
 
       it('Returns an array, if the user exists', () => {
         expect(Array.isArray(boxesFromAdapter)).toBe(true);
-      });
-
-      it('Throws an error, if the user does not exist', async () => {
-        expect.assertions(1);
-        await expect(getBoxesByUserId(invalidUserId)).rejects.toEqual(Error('There is no user with that ID.'));
       });
 
       it('Returns only boxes with the correct userId', () => {
