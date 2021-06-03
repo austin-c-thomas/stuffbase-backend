@@ -84,7 +84,6 @@ describe('API', () => {
       });
 
       it(`Returns the correct user's data, without the password`, () => {
-        console.log(userData);
         expect(userData.id).toBe(validCredentials.id);
         expect(userData.email).toBe(validCredentials.email);
         expect(userData.password).toBeUndefined();
@@ -94,7 +93,7 @@ describe('API', () => {
         expect(Array.isArray(userData.storage_locations)).toBe(true);
         expect(Array.isArray(userData.boxes)).toBe(true);
         expect(Array.isArray(userData.items)).toBe(true);
-      })
+      });
     });
   });
 

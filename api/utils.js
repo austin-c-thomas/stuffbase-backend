@@ -1,5 +1,3 @@
-const jwt = require('jsonwebtoken');
-
 const requireUser = (req, res, next) => {
   if (!req.user) {
     next({

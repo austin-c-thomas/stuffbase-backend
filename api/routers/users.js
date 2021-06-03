@@ -109,6 +109,12 @@ usersRouter.get('/me', requireUser, async (req, res, next) => {
   };
 });
 
+// Patch
+usersRouter.patch('/:userId', requireUser, async (req, res, next) => {
+  
+})
+
+
 // Admin Routes
 // Get all users
 
