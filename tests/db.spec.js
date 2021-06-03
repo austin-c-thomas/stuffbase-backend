@@ -25,7 +25,8 @@ const {
   getBoxItemByItemId, 
   getBoxItemsByBoxId, 
   updateBoxItem,
-  destroyBoxItem
+  destroyBoxItem,
+  getStorageLocationsByUserId
 } = require('../db');
 
 // Database Tests
@@ -168,6 +169,23 @@ describe('Database', () => {
         const storageLocation = await getStorageLocationById(testLocation.id);
         expect(storageLocation.id).toEqual(testLocation.id);
         expect(storageLocation.name).toEqual(testLocation.name);
+      });
+    });
+
+    describe('getStorageLocationsByUserId', () => {
+      const userId = 1;
+      let storageLocationList = null;
+      beforeAll(async () => {
+        storageLocationList = await getStorageLocationsByUserId(userId);
+      });
+
+      it('Returns an array', () => {
+        expect(Array.isArray(storageLocationList)).toBe(true);
+      });
+
+      it('Returns only storage locations with the correct userId', () => {
+        const locationsWithCorrectId = storageLocationList.filter((location) => location.userId === userId);
+        expect(locationsWithCorrectId.length).toBe(storageLocationList.length);
       });
     });
 

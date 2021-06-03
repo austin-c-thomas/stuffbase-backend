@@ -29,10 +29,6 @@ const createUser = async ({ email, password, displayName }) => {
       delete user.password;
     };
 
-    // if (user.email) {
-    //   user.email = emailCased;
-    // };
-
     return user;
   } catch (error) {
     throw error;
@@ -51,7 +47,7 @@ const getUserById = async (id) => {
       throw Error('There is no user with that ID.');
     };
 
-    // delete user.password;
+    delete user.password;
     return user;
   } catch (error) {
     throw error;
@@ -73,11 +69,11 @@ const getUserByEmail = async (email) => {
   };
 };
 
-const getUser = async ({ id, email, password }) => {
+const getUser = async ({ email, password }) => {
   const emailCased = email.toLowerCase();
 
   try {
-    const user = await getUserById(id);
+    const user = await getUserByEmail(emailCased);
     const hashedPassword = user.password;
 
     const passwordsMatch = await bcrypt.compare(password, hashedPassword);
@@ -92,9 +88,12 @@ const getUser = async ({ id, email, password }) => {
   };
 };
 
-
 const updateUser = async ({ id, email, password }) => {
-  const user = await getUserById(id);
+  const { rows: [user] } = await client.query(`
+    SELECT *
+    FROM users
+    WHERE id=$1;
+  `, [id]);
   const emailCased = email.toLowerCase();
   const hashedPassword = user.password;
 
