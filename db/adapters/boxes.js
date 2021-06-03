@@ -24,22 +24,18 @@ const createBox = async ({
 
 const getBoxesByUserId = async (userId) => {
   try {
-    const userExists = await getUserById(userId);
+    const { rows: boxData } = await client.query(`
+      SELECT boxes.id, boxes.label, boxes.description, boxes.category, boxes."userId", boxes."locationId",
+      box_items."itemId", items.name, items.description AS "itemDescription", items.category AS "itemCategory",
+      items.quantity, items."imageURL"
+      FROM boxes
+      LEFT JOIN box_items ON box_items."boxId" = boxes.id
+      LEFT JOIN items on items.id = box_items."itemId"
+      WHERE boxes."userId"=$1;
+    `, [userId]);
 
-    if (userExists) {
-      const { rows: boxData } = await client.query(`
-        SELECT boxes.id, boxes.label, boxes.description, boxes.category, boxes."userId", boxes."locationId",
-        box_items."itemId", items.name, items.description AS "itemDescription", items.category AS "itemCategory",
-        items.quantity, items."imageURL"
-        FROM boxes
-        LEFT JOIN box_items ON box_items."boxId" = boxes.id
-        LEFT JOIN items on items.id = box_items."itemId"
-        WHERE boxes."userId"=$1;
-      `, [userId]);
-
-      const boxes = reduceBoxes(boxData);
-      return boxes;
-    };
+    const boxes = reduceBoxes(boxData);
+    return boxes;
   } catch (error) {
     throw error;
   };

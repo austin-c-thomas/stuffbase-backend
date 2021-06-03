@@ -167,14 +167,57 @@ const updateUser = async ({ id, email, password, displayName }) => {
   };
 };
 
-// Will also need to destroy everything attached to the user
-// const destroyUser = async () => {
-//   try {
+const clearUserData = async (userId) => {
+  try {
+    const { rows: deletedBoxItems } = await client.query(`
+      DELETE FROM box_items
+      WHERE "userId"=$1
+      RETURNING *;
+    `, [userId]);
 
-//   } catch (error) {
-//     throw error;
-//   };
-// };
+    const { rows: deletedBoxes } = await client.query(`
+      DELETE FROM boxes
+      WHERE "userId"=$1
+      RETURNING *;
+    `, [userId]);
+
+    const { rows: deletedItems } = await client.query(`
+      DELETE FROM items
+      WHERE "userId"=$1
+      RETURNING *;
+    `, [userId]);
+
+    const { rows: deletedStorageLocations } = await client.query(`
+      DELETE FROM storage_locations
+      WHERE "userId"=$1
+      RETURNING*;
+    `, [userId]);
+
+    return { storage_locations: deletedStorageLocations, boxes: deletedBoxes, items: deletedItems, box_items: deletedBoxItems }
+  } catch (error) {
+    throw error;
+  };
+};
+
+// Will also need to destroy everything attached to the user
+const destroyUser = async (userId) => {
+  try {
+    const destroyedUserData = await clearUserData(userId);
+    const { rows: [deletedUser] } = await client.query(`
+      DELETE FROM users
+      WHERE id=$1
+      RETURNING *;
+    `, [userId]);
+    
+    if(!deletedUser) {
+      throw Error('Cannot delete a user that does not exist.')
+    };
+
+    return deletedUser;
+  } catch (error) {
+    throw error;
+  };
+};
 
 module.exports = {
   createUser,
@@ -182,4 +225,5 @@ module.exports = {
   getUserByEmail,
   getUser,
   updateUser,
+  destroyUser,
 }
