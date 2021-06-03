@@ -26,7 +26,8 @@ const {
   getBoxItemsByBoxId, 
   updateBoxItem,
   destroyBoxItem,
-  getStorageLocationsByUserId
+  getStorageLocationsByUserId,
+  getUserByEmail
 } = require('../db');
 
 // Database Tests
@@ -107,40 +108,44 @@ describe('Database', () => {
     });
 
     describe('updateUser', () => {
-      const updatedEmail = { id: 1, email: 'testuser2@test.com', password: 'iLoveStuffBase1' };
-      const badEmail = { id: 1, email: 'testuser2attest.com', password: 'iLoveStuffBase1' };
-      const updatedPassword = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase2' };
+      const updatedEmail = { id: 1, email: 'testuser2@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
+      const badEmail = { id: 1, email: 'testuser2attest.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
+      const updatedDisplayName = { id: 1, email: 'testUser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser2' };
+      const updateMultiple = { id: 1, email: 'testuser2@test.com', password: 'iLoveStuffBase2', displayName: 'TestUser2' };
+      let userToUpdate = null;
+      beforeAll(async () => {
+        const { rows: [user] } = await client.query(`
+          SELECT *
+          FROM users
+          WHERE id=$1;
+        `, [1]);
+        console.log(user);
+        userToUpdate = user;
+      })
       
       it('Validates the email format', async () => {
-        const { rows: [userToUpdate] } = await client.query(`
-        SELECT *
-        FROM users
-        WHERE id=$1;
-      `, [updatedEmail.id]);
         expect.assertions(1);
         await expect(updateUser(badEmail)).rejects.toEqual(Error('Invalid email format.'));
       });
 
       it(`Successfully updates the user's email`, async () => {
-        const { rows: [userToUpdate] } = await client.query(`
-          SELECT *
-          FROM users
-          WHERE id=$1;
-        `, [updatedEmail.id]);
         const updatedUser = await updateUser(updatedEmail);
         expect(updatedUser.email).not.toEqual(userToUpdate.email);
         expect(updatedUser.email).toEqual(updatedEmail.email);
       });
 
-      it(`Successfully updates the user's password`, async () => {
-        const { rows: [userToUpdate] } = await client.query(`
-          SELECT *
-          FROM users
-          WHERE id=$1;
-        `, [updatedPassword.id]);
+      it(`Successfully updates the user's displayName`, async () => {
+        const updatedUser = await updateUser(updatedDisplayName);
+        expect(updatedUser.displayName).not.toEqual(userToUpdate.displayName);
+        expect(updatedUser.displayName).toEqual(updatedDisplayName.displayName);
+      });
 
-        const updatedUser = await updateUser(updatedPassword);
-        expect(updatedUser.password).not.toEqual(userToUpdate.password);
+      it(`Successfully updates multiple fields at once`, async () => {
+        const updatedUser = await updateUser(updateMultiple);
+        expect(updatedUser.displayName).not.toEqual(userToUpdate.displayName);
+        expect(updatedUser.displayName).toEqual(updateMultiple.displayName);
+        expect(updatedUser.email).not.toEqual(userToUpdate.email);
+        expect(updatedUser.email).toEqual(updateMultiple.email);
       });
     });
   });

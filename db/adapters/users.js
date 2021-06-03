@@ -28,6 +28,10 @@ const createUser = async ({ email, password, displayName }) => {
     if (user.password) {
       delete user.password;
     };
+    
+    if (!user.isAdmin) {
+      delete user.isAdmin;
+    };
 
     return user;
   } catch (error) {
@@ -45,6 +49,10 @@ const getUserById = async (id) => {
 
     if(!user) {
       throw Error('There is no user with that ID.');
+    };
+
+    if (!user.isAdmin) {
+      delete user.isAdmin;
     };
 
     delete user.password;
@@ -81,6 +89,10 @@ const getUser = async ({ email, password }) => {
       throw Error('Password incorrect.');
     };
 
+    if (!user.isAdmin) {
+      delete user.isAdmin;
+    };
+
     delete user.password;
     return user;
   } catch (error) {
@@ -88,7 +100,7 @@ const getUser = async ({ email, password }) => {
   };
 };
 
-const updateUser = async ({ id, email, password }) => {
+const updateUser = async ({ id, email, password, displayName }) => {
   const { rows: [user] } = await client.query(`
     SELECT *
     FROM users
@@ -99,8 +111,13 @@ const updateUser = async ({ id, email, password }) => {
 
   // If the email or password is the same, dont re-encrypt it
   const sameEmail = emailCased === user.email;
+  const sameDisplayName = displayName === user.displayName;
   const samePassword = await bcrypt.compare(password, hashedPassword);
-  if (sameEmail && samePassword) {
+  if (sameEmail && samePassword && sameDisplayName) {
+    if (!user.isAdmin) {
+      delete user.isAdmin;
+    };
+
     delete user.password;
     return user;
   };
@@ -113,6 +130,10 @@ const updateUser = async ({ id, email, password }) => {
   if (!sameEmail) {
     validateEmailFormat(email);
     updateFields.email = emailCased;
+  };
+
+  if (!sameDisplayName) {
+    updateFields.displayName = displayName;
   };
 
   if (!samePassword) {
@@ -134,6 +155,10 @@ const updateUser = async ({ id, email, password }) => {
       WHERE id=${id}
       RETURNING *;
     `, Object.values(updateFields));
+
+    if (!user.isAdmin) {
+      delete user.isAdmin;
+    };
     
     delete updatedUser.password;
     return updatedUser;
