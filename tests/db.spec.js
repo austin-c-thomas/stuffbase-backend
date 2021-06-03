@@ -349,6 +349,14 @@ describe('Database', () => {
         expect(updatedItem.description).toBe(itemUpdates.description);
         expect(updatedItem.description).not.toBe(itemToUpdate.description);
       });
+
+      it('Removes the item from a box, if it was in one', async () => {
+        const itemUpdates = { id: 7, locationId: 2 }
+        const updatedItem = await updateItem(itemUpdates);
+        expect.assertions(2);
+        expect(updatedItem).toBeDefined();
+        await expect(getBoxItemByItemId(7)).rejects.toEqual(Error('That item is not in a box.'))
+      });
     });
 
     describe('destroyItem', () => {
