@@ -9,6 +9,17 @@ const requireUser = (req, res, next) => {
   next();
 };
 
+const requireAdmin = (req, res, next) => {
+  if (!req.user.idAdmin) {
+    next({
+      name: 'UnauthorizedUserError',
+      message: 'You must be an administrator to perform this action.',
+    });
+  };
+  
+  next();
+};
+
 const getTokenFromRequest = (req, res, next) => {
   const auth = req.header('Authorization');
   const prefix = 'Bearer ';
@@ -18,5 +29,6 @@ const getTokenFromRequest = (req, res, next) => {
 
 module.exports = {
   requireUser,
+  requireAdmin,
   getTokenFromRequest,
 };

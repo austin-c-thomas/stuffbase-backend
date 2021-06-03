@@ -15,6 +15,7 @@ const {
   getStorageLocationsByUserId,
   getBoxesByUserId,
   getItemsByUserId,
+  updateUser,
 } = require('../../db');
 
 usersRouter.use((req, res, next) => {
@@ -101,8 +102,46 @@ usersRouter.get('/me', requireUser, async (req, res, next) => {
       items: userItems ? userItems : [],
     };
 
-    if (id == req.user.id) {
+    // For scalability, don't fetch all items and boxes at once?
+    // userData = {
+    //   ...user,
+    //   storage_locations: userStorageLocations ? userStorageLocations : [],
+    //   boxes: userBoxes.length,
+    //   items: userItems.length,
+    // };
+
+    if (Number(id) === Number(req.user.id)) {
       res.send(userData);
+    };
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+// My Boxes
+usersRouter.get('/me/boxes', requireUser, async (req, res, next) => {
+  const token = getTokenFromRequest(req);
+  const { id } = jwt.verify(token, JWT_SECRET);
+
+  try {
+    const userBoxes = await getBoxesByUserId(id);
+    if (Number(id) === Number(req.user.id)) {
+      res.send(userBoxes);
+    };
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+// My Items
+usersRouter.get('/me/items', requireUser, async (req, res, next) => {
+  const token = getTokenFromRequest(req);
+  const { id } = jwt.verify(token, JWT_SECRET);
+
+  try {
+    const userItems = await getItemsByUserId(id);
+    if (Number(id) === Number(req.user.id)) {
+      res.send(userItems);
     };
   } catch ({ name, message }) {
     next({ name, message });
@@ -111,9 +150,39 @@ usersRouter.get('/me', requireUser, async (req, res, next) => {
 
 // Patch
 usersRouter.patch('/:userId', requireUser, async (req, res, next) => {
-  
-})
+  const { userId } = req.params;
+  const { email, password, displayName } = req.body;
+  try {
+    if (Number(req.user.id) !== Number(userId) && !req.user.isAdmin) {
+      throw Error('You do not have permision to edit this account.');
+    };
 
+    const updateBody = {
+      id: userId,
+      email: email,
+      password: password,
+      displayName: displayName,
+    };
+
+    const updatedUser = await updateUser(updateBody);
+    res.send(updatedUser);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+// usersRouter.delete('/:userId', requireUser, async (req, res, next) => {
+//   const { userId } = req.params;
+//   try {
+//     if (Number(req.user.id) !== Number(userId) && !req.user.isAdmin) {
+//       throw Error('You do not have permision to delete this account.');
+//     };
+
+//     // const deletedUser = await destroyUser
+//   } catch (error) {
+
+//   }
+// })
 
 // Admin Routes
 // Get all users
