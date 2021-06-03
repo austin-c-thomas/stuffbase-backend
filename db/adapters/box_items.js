@@ -1,21 +1,15 @@
 const client = require('../client');
 const { getBoxById } = require('./boxes');
-const { getItemById, updateItem } = require('./items');
+const { getItemById } = require('./items');
 
 const createBoxItem = async ({ boxId, itemId }) => {
   try {
     const box = await getBoxById(boxId);
     const item = await getItemById(itemId);
-    // const { rows: [item] } = await client.query(`
-    //   SELECT *
-    //   FROM items
-    //   WHERE id=$1;
-    // `, [itemId]);
 
     if (box.userId !== item.userId) {
       throw Error('Box and item must belong to the same user.')
     };
-
     const userId = Number(box.userId);
 
     const { rows: [newBoxItem] } = await client.query(`
@@ -23,6 +17,17 @@ const createBoxItem = async ({ boxId, itemId }) => {
       VALUES($1, $2, $3)
       RETURNING *;
     `, [boxId, itemId, userId]);
+
+    // Move the item to the box's location if it isn't already there
+    if (box.locationId !== item.locationId) {
+      const newLocation = box.locationId;
+      const { rows: [updatedItemLocation] } = await client.query(`
+        UPDATE items
+        SET "locationId"=$1
+        WHERE id=$2
+        RETURNING *;
+      `, [newLocation, itemId]);
+    };
 
     return newBoxItem;
   } catch (error) {
@@ -67,6 +72,13 @@ const getBoxItemsByBoxId = async (boxId) => {
 
 const updateBoxItem = async ({ itemId, boxId }) => {
   try {
+    const { rows: [updatedBoxItem] } = await client.query(`
+      UPDATE box_items
+      SET "boxId"=$1
+      WHERE "itemId"=$2
+      RETURNING *;
+    `, [boxId, itemId]);
+
     //get new box's location
     const {locationId: newLocation} = await getBoxById(boxId);
     //change the item location to the new box's location
@@ -76,13 +88,6 @@ const updateBoxItem = async ({ itemId, boxId }) => {
       WHERE id=$2
       RETURNING *;
     `, [newLocation, itemId]);
-
-    const { rows: [updatedBoxItem] } = await client.query(`
-      UPDATE box_items
-      SET "boxId"=$1
-      WHERE "itemId"=$2
-      RETURNING *;
-    `, [boxId, itemId]);
 
     return updatedBoxItem;
   } catch (error) {

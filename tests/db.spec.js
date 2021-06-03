@@ -523,9 +523,11 @@ describe('Database', () => {
   describe('Box Items', () => {
     const newBoxItemData = { boxId: 2, itemId: 8 }
     const duplicateItemData = { boxId: 3, itemId: 8 }
+    let oldItem = null;
     let newBoxItem = null;
     describe('createBoxItem', () => {
       beforeAll(async () => {
+        oldItem = await getItemById(newBoxItemData.itemId);
         newBoxItem = await createBoxItem(newBoxItemData);
       });
 
@@ -538,6 +540,13 @@ describe('Database', () => {
         expect.assertions(1);
         await expect(createBoxItem(duplicateItemData)).rejects.toEqual(Error('duplicate key value violates unique constraint "box_items_pkey"'))
       });
+
+      it('Moves the item to the location of the box, if it is not already there', async () => {
+        const { locationId: boxLocation } = await getBoxById(newBoxItemData.boxId);
+        const { locationId: newItemLocation } = await getItemById(newBoxItemData.itemId);
+        expect(newItemLocation).not.toBe(oldItem.locationId);
+        expect(newItemLocation).toBe(boxLocation);
+      })
     });
 
     describe('getBoxItemByItemId', () => {
@@ -584,9 +593,11 @@ describe('Database', () => {
       let newBoxItem = null;
       beforeAll(async () => {
         oldBoxItem = await getBoxItemByItemId(updatedData.itemId);
+        // console.log('OLD BOX ITEM', oldBoxItem);
         oldItemLocation = await getItemById(updatedData.itemId);
         newBoxLocation = await getBoxById(updatedData.boxId);
         newBoxItem = await updateBoxItem(updatedData);
+        // console.log('NEW BOX ITEM', newBoxItem);
       });
 
       it('Updates the boxId of the box-item', () => {

@@ -89,7 +89,14 @@ const updateItem = async (item) => {
   }).join(', ');
   
   try {
-    // If the item is in a box, remove it (destroy the relationship)
+    const { rows: [updatedItem] } = await client.query(`
+      UPDATE items
+      SET ${setString}
+      WHERE id=${item.id}
+      RETURNING *;
+    `, Object.values(updateFields));
+
+    // If the item was in a box, remove it (destroy the relationship)
     if (item.locationId) {
       const { rows: [isInBox] } = await client.query(`
         SELECT *
@@ -104,13 +111,6 @@ const updateItem = async (item) => {
         `, [isInBox.itemId]);
       };
     };
-    
-    const { rows: [updatedItem] } = await client.query(`
-      UPDATE items
-      SET ${setString}
-      WHERE id=${item.id}
-      RETURNING *;
-    `, Object.values(updateFields));
 
     return updatedItem;
   } catch (error) {

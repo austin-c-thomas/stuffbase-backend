@@ -317,7 +317,7 @@ createInitialBoxes = async () => {
       description: 'Cardboard Box (lg)',
       category: 'Kitchen',
       userId: 1,
-      locationId: 3,
+      locationId: 2,
     });
 
     await createBox({
