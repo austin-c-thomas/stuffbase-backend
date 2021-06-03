@@ -1,6 +1,5 @@
 const client = require('../client');
 const { getStorageLocationById } = require('./storage_locations');
-const { getUserById } = require('./users');
 
 const createItem = async ({ 
   name, 
@@ -31,6 +30,11 @@ const getItemById = async (id) => {
       FROM items
       WHERE id=$1;
     `, [id]);
+
+    if (!item) {
+      throw Error('There is no item with that ID.');
+    };
+
     return item;
   } catch (error) {
     throw error;
@@ -85,6 +89,10 @@ const updateItem = async (item) => {
   }).join(', ');
   
   try {
+    // Is the item in a box?
+    // const isInBox = await getBoxItemByItemId(item.id);
+    // console.log(isInBox);
+
     const { rows: [updatedItem] } = await client.query(`
       UPDATE items
       SET ${setString}

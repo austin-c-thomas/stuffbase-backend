@@ -6,6 +6,11 @@ const createBoxItem = async ({ boxId, itemId }) => {
   try {
     const box = await getBoxById(boxId);
     const item = await getItemById(itemId);
+    // const { rows: [item] } = await client.query(`
+    //   SELECT *
+    //   FROM items
+    //   WHERE id=$1;
+    // `, [itemId]);
 
     if (box.userId !== item.userId) {
       throw Error('Box and item must belong to the same user.')
