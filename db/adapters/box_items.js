@@ -1,6 +1,6 @@
 const client = require('../client');
 const { getBoxById } = require('./boxes');
-const { getItemById } = require('./items');
+const { getItemById, updateItem } = require('./items');
 
 const createBoxItem = async ({ boxId, itemId }) => {
   try {
@@ -67,6 +67,16 @@ const getBoxItemsByBoxId = async (boxId) => {
 
 const updateBoxItem = async ({ itemId, boxId }) => {
   try {
+    //get new box's location
+    const {locationId: newLocation} = await getBoxById(boxId);
+    //change the item location to the new box's location
+    const { rows: [updatedItemLocation] } = await client.query(`
+      UPDATE items
+      SET "locationId"=$1
+      WHERE id=$2
+      RETURNING *;
+    `, [newLocation, itemId]);
+
     const { rows: [updatedBoxItem] } = await client.query(`
       UPDATE box_items
       SET "boxId"=$1

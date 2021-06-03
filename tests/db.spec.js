@@ -350,12 +350,19 @@ describe('Database', () => {
         expect(updatedItem.description).not.toBe(itemToUpdate.description);
       });
 
-      it('Removes the item from a box, if it was in one', async () => {
+      it('Removes the item from a box, if it was in one, and the location is being changed', async () => {
         const itemUpdates = { id: 7, locationId: 2 }
         const updatedItem = await updateItem(itemUpdates);
         expect.assertions(2);
         expect(updatedItem).toBeDefined();
         await expect(getBoxItemByItemId(7)).rejects.toEqual(Error('That item is not in a box.'))
+      });
+
+      it('Does not remove the item from its box if its location is not being changed', async () => {
+        const itemUpdates = { id: 6, description: 'Coffee maker from Tahoe' }
+        const updatedItem = await updateItem(itemUpdates);
+        const boxItem = await getBoxItemByItemId(updatedItem.id);
+        expect(boxItem).toBeDefined();
       });
     });
 
@@ -571,10 +578,25 @@ describe('Database', () => {
 
     describe('updateBoxItem', () => {
       const updatedData = { boxId: 3, itemId: 8 }
+      let oldBoxItem = null;
+      let oldItemLocation = null;
+      let newBoxLocation = null;
+      let newBoxItem = null;
+      beforeAll(async () => {
+        oldBoxItem = await getBoxItemByItemId(updatedData.itemId);
+        oldItemLocation = await getItemById(updatedData.itemId);
+        newBoxLocation = await getBoxById(updatedData.boxId);
+        newBoxItem = await updateBoxItem(updatedData);
+      });
 
-      it('Updates the boxId of the box-item', async () => {
-        const updatedBoxItem = await updateBoxItem(updatedData);
-        expect(updatedBoxItem.boxId).toBe(updatedData.boxId);
+      it('Updates the boxId of the box-item', () => {
+        expect(newBoxItem.boxId).toBe(updatedData.boxId);
+      });
+
+      it('Changes the location of the item to that of the new box', async () => {
+        const updatedItemLocation = await getItemById(updatedData.itemId);
+        expect(updatedItemLocation.locationId).toBe(newBoxLocation.locationId);
+        expect(updatedItemLocation.locationId).not.toBe(oldItemLocation.locationId);
       });
     });
 

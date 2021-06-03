@@ -90,19 +90,21 @@ const updateItem = async (item) => {
   
   try {
     // If the item is in a box, remove it (destroy the relationship)
-    const { rows: [isInBox] } = await client.query(`
-      SELECT *
-      FROM box_items
-      WHERE "itemId"=$1;
-    `, [item.id]);
-    if (isInBox) {
-      await client.query(`
-        DELETE FROM box_items
-        WHERE "itemId"=$1
-        RETURNING *;
-      `, [isInBox.itemId]);
+    if (item.locationId) {
+      const { rows: [isInBox] } = await client.query(`
+        SELECT *
+        FROM box_items
+        WHERE "itemId"=$1;
+      `, [item.id]);
+      if (isInBox) {
+        await client.query(`
+          DELETE FROM box_items
+          WHERE "itemId"=$1
+          RETURNING *;
+        `, [isInBox.itemId]);
+      };
     };
-
+    
     const { rows: [updatedItem] } = await client.query(`
       UPDATE items
       SET ${setString}
