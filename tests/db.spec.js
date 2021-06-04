@@ -392,21 +392,21 @@ describe('Database', () => {
   describe('Boxes', () => {
     const newBoxData = { label: 'Homebrew Supplies', description: '2 x 4 Plastic Tub', category: 'Homebrew', userId: 1, locationId: 3 };
     const boxToGet = { id: 1, label: 'Halloween Decor', description: '2 x 4 Plastic Tub', category: 'Decor', userId: 1, locationId: 3 };
-    let boxToCreateAndUpdate = null;
+    let boxToCreateAndDestroy = null;
     describe('createBox', () => {
       beforeAll(async () => {
-        boxToCreateAndUpdate = await createBox(newBoxData);
+        boxToCreateAndDestroy = await createBox(newBoxData);
       });
 
       it('Creates a new box in the db', () => {
-        expect(boxToCreateAndUpdate.id).toBeDefined();
+        expect(boxToCreateAndDestroy.id).toBeDefined();
       });
 
       it('Creates a box with the correct data', () => {
-        expect(boxToCreateAndUpdate.label).toEqual(newBoxData.label);
-        expect(boxToCreateAndUpdate.description).toEqual(newBoxData.description);
-        expect(boxToCreateAndUpdate.userId).toBe(newBoxData.userId);
-        expect(boxToCreateAndUpdate.locationId).toBe(newBoxData.locationId);
+        expect(boxToCreateAndDestroy.label).toEqual(newBoxData.label);
+        expect(boxToCreateAndDestroy.description).toEqual(newBoxData.description);
+        expect(boxToCreateAndDestroy.userId).toBe(newBoxData.userId);
+        expect(boxToCreateAndDestroy.locationId).toBe(newBoxData.locationId);
       });
     });
 
@@ -469,18 +469,21 @@ describe('Database', () => {
     });
 
     describe('updateBox', () => {
-      const boxToUpdateId = 5;
-      const boxUpdates = { id: boxToUpdateId, label: 'Her Jackets', category: 'Clothing' }
+      const boxToUpdateId = 2;
+      const boxUpdates = { id: boxToUpdateId, label: 'Kitchen', category: 'Cooking', locationId: 4 }
       let boxToUpdate = null;
       let updatedBox = null;
+      let oldBoxItemLocations = null;
 
       beforeAll(async () => {
+        boxToUpdate = await getBoxById(boxToUpdateId);
         const { rows } = await client.query(`
-          SELECT *
-          FROM boxes
-          WHERE id=$1;
-        `, [5]);
-        boxToUpdate = rows[0];
+          SELECT items.*, box_items."boxId"
+          FROM items
+          LEFT JOIN box_items ON box_items."itemId" = items.id
+          WHERE box_items."boxId"=$1;
+        `, [boxToUpdateId]);
+        oldBoxItemLocations = rows.map((item) => item.locationId);
         updatedBox = await updateBox(boxUpdates);
       });
 
@@ -495,17 +498,32 @@ describe('Database', () => {
         expect(updatedBox.category).toBe(boxUpdates.category);
         expect(updatedBox.category).not.toBe(boxToUpdate.category);
       });
+
+      it('Moves any box items to the new location, if they exist', async () => {
+        const { rows: updatedBoxItems } = await client.query(`
+          SELECT items.id, items."locationId", box_items."boxId"
+          FROM items
+          LEFT JOIN box_items ON box_items."itemId" = items.id
+          WHERE box_items."boxId"=$1;
+        `, [boxToUpdateId]);
+        const newItemLocations = updatedBoxItems.map((item) => item.locationId);
+        expect(newItemLocations[0]).toBe(boxUpdates.locationId);
+        expect(newItemLocations[newItemLocations.length - 1]).toBe(boxUpdates.locationId);
+        expect(newItemLocations[0]).not.toBe(oldBoxItemLocations[0]);
+        expect(newItemLocations[newItemLocations.length - 1]).not.toBe(oldBoxItemLocations[oldBoxItemLocations.length - 1]);
+
+      });
     });
 
     describe('destroyBox', () => {
       let deletedBox = null;
       beforeAll(async () => {
-        deletedBox = await destroyBox(boxToCreateAndUpdate);
+        deletedBox = await destroyBox(boxToCreateAndDestroy);
       });
 
       it('Returns the correct destroyed box', () => {
         expect(deletedBox).toBeDefined();
-        expect(deletedBox.id).toBe(boxToCreateAndUpdate.id);
+        expect(deletedBox.id).toBe(boxToCreateAndDestroy.id);
       });
 
       it('Permanently deletes the box from the db', async () => {

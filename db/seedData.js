@@ -131,6 +131,12 @@ const createInitialStorageLocations = async () => {
     });
 
     await createStorageLocation({
+      userId: 1,
+      name: `Parents' House`,
+      location: 'Remote',
+    });
+
+    await createStorageLocation({
       userId: 2,
       name: 'Bank',
     });
