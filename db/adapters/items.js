@@ -1,6 +1,5 @@
 const client = require('../client');
 const { getStorageLocationById } = require('./storage_locations');
-const { getUserById } = require('./users');
 
 const createItem = async ({ 
   name, 
@@ -31,6 +30,11 @@ const getItemById = async (id) => {
       FROM items
       WHERE id=$1;
     `, [id]);
+
+    if (!item) {
+      throw Error('There is no item with that ID.');
+    };
+
     return item;
   } catch (error) {
     throw error;
@@ -91,6 +95,22 @@ const updateItem = async (item) => {
       WHERE id=${item.id}
       RETURNING *;
     `, Object.values(updateFields));
+
+    // If the item was in a box, remove it (destroy the relationship)
+    if (item.locationId) {
+      const { rows: [isInBox] } = await client.query(`
+        SELECT *
+        FROM box_items
+        WHERE "itemId"=$1;
+      `, [item.id]);
+      if (isInBox) {
+        await client.query(`
+          DELETE FROM box_items
+          WHERE "itemId"=$1
+          RETURNING *;
+        `, [isInBox.itemId]);
+      };
+    };
 
     return updatedItem;
   } catch (error) {

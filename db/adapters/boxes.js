@@ -1,4 +1,5 @@
 const client = require('../client');
+// const { getBoxItemsByBoxId } = require('./box_items');
 const { getStorageLocationById } = require('./storage_locations');
 const { getUserById } = require('./users');
 
@@ -99,6 +100,30 @@ const updateBox = async (box) => {
       WHERE id=${box.id}
       RETURNING *;
     `, Object.values(updateFields));
+
+    // If the location changed... 
+    if (box.locationId) {
+      // Find out if the box had any items in it
+      const { rows: boxContents } = await client.query(`
+        SELECT items.*, box_items."boxId"
+        FROM items
+        LEFT JOIN box_items ON box_items."itemId" = items.id
+        WHERE box_items."boxId"=$1;
+      `, [box.id]);
+
+      // If the box did have items in it, change each one's location to the new box location
+      if (boxContents.length > 0) {
+        await Promise.all(boxContents.map(async (item) => {
+          const { rows: [movedItem] } = await client.query(`
+            UPDATE items
+            SET "locationId"=$1
+            WHERE id=$2
+            RETURNING *;
+          `, [box.locationId, item.id]);
+          return movedItem;
+        }));
+      };
+    };
 
     return updatedBox;
   } catch (error) {

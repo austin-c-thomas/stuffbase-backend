@@ -10,7 +10,6 @@ const createBoxItem = async ({ boxId, itemId }) => {
     if (box.userId !== item.userId) {
       throw Error('Box and item must belong to the same user.')
     };
-
     const userId = Number(box.userId);
 
     const { rows: [newBoxItem] } = await client.query(`
@@ -18,6 +17,17 @@ const createBoxItem = async ({ boxId, itemId }) => {
       VALUES($1, $2, $3)
       RETURNING *;
     `, [boxId, itemId, userId]);
+
+    // Move the item to the box's location if it isn't already there
+    if (box.locationId !== item.locationId) {
+      const newLocation = box.locationId;
+      const { rows: [updatedItemLocation] } = await client.query(`
+        UPDATE items
+        SET "locationId"=$1
+        WHERE id=$2
+        RETURNING *;
+      `, [newLocation, itemId]);
+    };
 
     return newBoxItem;
   } catch (error) {
@@ -68,6 +78,16 @@ const updateBoxItem = async ({ itemId, boxId }) => {
       WHERE "itemId"=$2
       RETURNING *;
     `, [boxId, itemId]);
+
+    //get new box's location
+    const {locationId: newLocation} = await getBoxById(boxId);
+    //change the item location to the new box's location
+    const { rows: [updatedItemLocation] } = await client.query(`
+      UPDATE items
+      SET "locationId"=$1
+      WHERE id=$2
+      RETURNING *;
+    `, [newLocation, itemId]);
 
     return updatedBoxItem;
   } catch (error) {

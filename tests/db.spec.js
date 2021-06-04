@@ -349,6 +349,21 @@ describe('Database', () => {
         expect(updatedItem.description).toBe(itemUpdates.description);
         expect(updatedItem.description).not.toBe(itemToUpdate.description);
       });
+
+      it('Removes the item from a box, if it was in one, and the location is being changed', async () => {
+        const itemUpdates = { id: 7, locationId: 2 }
+        const updatedItem = await updateItem(itemUpdates);
+        expect.assertions(2);
+        expect(updatedItem).toBeDefined();
+        await expect(getBoxItemByItemId(7)).rejects.toEqual(Error('That item is not in a box.'))
+      });
+
+      it('Does not remove the item from its box if its location is not being changed', async () => {
+        const itemUpdates = { id: 6, description: 'Coffee maker from Tahoe' }
+        const updatedItem = await updateItem(itemUpdates);
+        const boxItem = await getBoxItemByItemId(updatedItem.id);
+        expect(boxItem).toBeDefined();
+      });
     });
 
     describe('destroyItem', () => {
@@ -377,21 +392,21 @@ describe('Database', () => {
   describe('Boxes', () => {
     const newBoxData = { label: 'Homebrew Supplies', description: '2 x 4 Plastic Tub', category: 'Homebrew', userId: 1, locationId: 3 };
     const boxToGet = { id: 1, label: 'Halloween Decor', description: '2 x 4 Plastic Tub', category: 'Decor', userId: 1, locationId: 3 };
-    let boxToCreateAndUpdate = null;
+    let boxToCreateAndDestroy = null;
     describe('createBox', () => {
       beforeAll(async () => {
-        boxToCreateAndUpdate = await createBox(newBoxData);
+        boxToCreateAndDestroy = await createBox(newBoxData);
       });
 
       it('Creates a new box in the db', () => {
-        expect(boxToCreateAndUpdate.id).toBeDefined();
+        expect(boxToCreateAndDestroy.id).toBeDefined();
       });
 
       it('Creates a box with the correct data', () => {
-        expect(boxToCreateAndUpdate.label).toEqual(newBoxData.label);
-        expect(boxToCreateAndUpdate.description).toEqual(newBoxData.description);
-        expect(boxToCreateAndUpdate.userId).toBe(newBoxData.userId);
-        expect(boxToCreateAndUpdate.locationId).toBe(newBoxData.locationId);
+        expect(boxToCreateAndDestroy.label).toEqual(newBoxData.label);
+        expect(boxToCreateAndDestroy.description).toEqual(newBoxData.description);
+        expect(boxToCreateAndDestroy.userId).toBe(newBoxData.userId);
+        expect(boxToCreateAndDestroy.locationId).toBe(newBoxData.locationId);
       });
     });
 
@@ -454,18 +469,21 @@ describe('Database', () => {
     });
 
     describe('updateBox', () => {
-      const boxToUpdateId = 5;
-      const boxUpdates = { id: boxToUpdateId, label: 'Her Jackets', category: 'Clothing' }
+      const boxToUpdateId = 2;
+      const boxUpdates = { id: boxToUpdateId, label: 'Kitchen', category: 'Cooking', locationId: 4 }
       let boxToUpdate = null;
       let updatedBox = null;
+      let oldBoxItemLocations = null;
 
       beforeAll(async () => {
+        boxToUpdate = await getBoxById(boxToUpdateId);
         const { rows } = await client.query(`
-          SELECT *
-          FROM boxes
-          WHERE id=$1;
-        `, [5]);
-        boxToUpdate = rows[0];
+          SELECT items.*, box_items."boxId"
+          FROM items
+          LEFT JOIN box_items ON box_items."itemId" = items.id
+          WHERE box_items."boxId"=$1;
+        `, [boxToUpdateId]);
+        oldBoxItemLocations = rows.map((item) => item.locationId);
         updatedBox = await updateBox(boxUpdates);
       });
 
@@ -480,17 +498,32 @@ describe('Database', () => {
         expect(updatedBox.category).toBe(boxUpdates.category);
         expect(updatedBox.category).not.toBe(boxToUpdate.category);
       });
+
+      it('Moves any box items to the new location, if they exist', async () => {
+        const { rows: updatedBoxItems } = await client.query(`
+          SELECT items.id, items."locationId", box_items."boxId"
+          FROM items
+          LEFT JOIN box_items ON box_items."itemId" = items.id
+          WHERE box_items."boxId"=$1;
+        `, [boxToUpdateId]);
+        const newItemLocations = updatedBoxItems.map((item) => item.locationId);
+        expect(newItemLocations[0]).toBe(boxUpdates.locationId);
+        expect(newItemLocations[newItemLocations.length - 1]).toBe(boxUpdates.locationId);
+        expect(newItemLocations[0]).not.toBe(oldBoxItemLocations[0]);
+        expect(newItemLocations[newItemLocations.length - 1]).not.toBe(oldBoxItemLocations[oldBoxItemLocations.length - 1]);
+
+      });
     });
 
     describe('destroyBox', () => {
       let deletedBox = null;
       beforeAll(async () => {
-        deletedBox = await destroyBox(boxToCreateAndUpdate);
+        deletedBox = await destroyBox(boxToCreateAndDestroy);
       });
 
       it('Returns the correct destroyed box', () => {
         expect(deletedBox).toBeDefined();
-        expect(deletedBox.id).toBe(boxToCreateAndUpdate.id);
+        expect(deletedBox.id).toBe(boxToCreateAndDestroy.id);
       });
 
       it('Permanently deletes the box from the db', async () => {
@@ -508,9 +541,11 @@ describe('Database', () => {
   describe('Box Items', () => {
     const newBoxItemData = { boxId: 2, itemId: 8 }
     const duplicateItemData = { boxId: 3, itemId: 8 }
+    let oldItem = null;
     let newBoxItem = null;
     describe('createBoxItem', () => {
       beforeAll(async () => {
+        oldItem = await getItemById(newBoxItemData.itemId);
         newBoxItem = await createBoxItem(newBoxItemData);
       });
 
@@ -523,6 +558,13 @@ describe('Database', () => {
         expect.assertions(1);
         await expect(createBoxItem(duplicateItemData)).rejects.toEqual(Error('duplicate key value violates unique constraint "box_items_pkey"'))
       });
+
+      it('Moves the item to the location of the box, if it is not already there', async () => {
+        const { locationId: boxLocation } = await getBoxById(newBoxItemData.boxId);
+        const { locationId: newItemLocation } = await getItemById(newBoxItemData.itemId);
+        expect(newItemLocation).not.toBe(oldItem.locationId);
+        expect(newItemLocation).toBe(boxLocation);
+      })
     });
 
     describe('getBoxItemByItemId', () => {
@@ -563,10 +605,27 @@ describe('Database', () => {
 
     describe('updateBoxItem', () => {
       const updatedData = { boxId: 3, itemId: 8 }
+      let oldBoxItem = null;
+      let oldItemLocation = null;
+      let newBoxLocation = null;
+      let newBoxItem = null;
+      beforeAll(async () => {
+        oldBoxItem = await getBoxItemByItemId(updatedData.itemId);
+        // console.log('OLD BOX ITEM', oldBoxItem);
+        oldItemLocation = await getItemById(updatedData.itemId);
+        newBoxLocation = await getBoxById(updatedData.boxId);
+        newBoxItem = await updateBoxItem(updatedData);
+        // console.log('NEW BOX ITEM', newBoxItem);
+      });
 
-      it('Updates the boxId of the box-item', async () => {
-        const updatedBoxItem = await updateBoxItem(updatedData);
-        expect(updatedBoxItem.boxId).toBe(updatedData.boxId);
+      it('Updates the boxId of the box-item', () => {
+        expect(newBoxItem.boxId).toBe(updatedData.boxId);
+      });
+
+      it('Changes the location of the item to that of the new box', async () => {
+        const updatedItemLocation = await getItemById(updatedData.itemId);
+        expect(updatedItemLocation.locationId).toBe(newBoxLocation.locationId);
+        expect(updatedItemLocation.locationId).not.toBe(oldItemLocation.locationId);
       });
     });
 

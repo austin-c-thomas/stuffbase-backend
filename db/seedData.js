@@ -131,6 +131,12 @@ const createInitialStorageLocations = async () => {
     });
 
     await createStorageLocation({
+      userId: 1,
+      name: `Parents' House`,
+      location: 'Remote',
+    });
+
+    await createStorageLocation({
       userId: 2,
       name: 'Bank',
     });
@@ -317,7 +323,7 @@ createInitialBoxes = async () => {
       description: 'Cardboard Box (lg)',
       category: 'Kitchen',
       userId: 1,
-      locationId: 3,
+      locationId: 2,
     });
 
     await createBox({
