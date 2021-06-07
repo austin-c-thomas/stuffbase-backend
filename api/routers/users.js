@@ -16,6 +16,7 @@ const {
   getBoxesByUserId,
   getItemsByUserId,
   updateUser,
+  destroyUser,
 } = require('../../db');
 
 usersRouter.use((req, res, next) => {
@@ -171,18 +172,19 @@ usersRouter.patch('/:userId', requireUser, async (req, res, next) => {
   };
 });
 
-// usersRouter.delete('/:userId', requireUser, async (req, res, next) => {
-//   const { userId } = req.params;
-//   try {
-//     if (Number(req.user.id) !== Number(userId) && !req.user.isAdmin) {
-//       throw Error('You do not have permision to delete this account.');
-//     };
+usersRouter.delete('/:userId', requireUser, async (req, res, next) => {
+  const { userId } = req.params;
+  try {
+    if (Number(req.user.id) !== Number(userId) && !req.user.isAdmin) {
+      throw Error('You do not have permision to delete this account.');
+    };
 
-//     // const deletedUser = await destroyUser
-//   } catch (error) {
-
-//   }
-// })
+    const deletedUser = await destroyUser(userId);
+    res.send(deletedUser);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
 
 // Admin Routes
 // Get all users
