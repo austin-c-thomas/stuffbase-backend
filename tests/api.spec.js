@@ -5,6 +5,7 @@ const {
   getUser,
   getBoxesByUserId,
   getItemsByUserId,
+  getStorageLocationsByUserId,
 } = require('../db');
 require('dotenv').config();
 const client = require('../db/client');
@@ -88,7 +89,6 @@ describe('API', () => {
         const token = user.token;
         const { data } = await axios.get(`${API_URL}/api/users/me`, { headers: {'Authorization': `Bearer ${token}`}});
         userData = data;
-        console.log(userData);
       });
 
       it(`Returns the correct user's data, without the password`, () => {
@@ -173,6 +173,36 @@ describe('API', () => {
       it('Throws an error if the user is unauthorized', async () => {
         expect.assertions(1);
         await expect(axios.patch(`${API_URL}/api/users/1`, userUpdates, { headers: {'Authorization': `Bearer ${token}`}})).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+
+    describe('DELETE /users/:userId', () => {
+      const userToDeleteId = 2;
+      let token = null;
+      let deletedUser = null;
+      beforeAll(async () => {
+        const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'bonybones@gmail.com', password: 'TwistedBow99' });
+        token = user.token;
+      });
+      
+      it('Does not allow a non-admin user to delete another user', async () => {
+        expect.assertions(1);
+        await expect(axios.delete(`${API_URL}/api/users/1`, { headers: {'Authorization': `Bearer ${token}`}})).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it('Deletes the user from the database', async () => {
+        expect.assertions(1);
+        deletedUser = await axios.delete(`${API_URL}/api/users/${userToDeleteId}`, { headers: {'Authorization': `Bearer ${token}`}});
+        await expect(getUserById(userToDeleteId)).rejects.toEqual(Error('There is no user with that ID.'));
+      });
+
+      it(`Removes the user's storage_locations, items, and boxes from the db`, async () => {
+        const userLocations = await getStorageLocationsByUserId(userToDeleteId);
+        const userBoxes = await getBoxesByUserId(userToDeleteId);
+        const userItems = await getItemsByUserId(userToDeleteId);
+        expect(userLocations).toEqual([]);
+        expect(userBoxes).toEqual([]);
+        expect(userItems).toEqual([]);
       });
     });
   });
