@@ -3,10 +3,6 @@ const { getUserById } = require('./users');
 
 const createStorageLocation = async ({ userId, name, location = "Home", note }) => {
   try {
-    if (!name) {
-      throw Error('Please supply all required fields.');
-    };
-    
     const { rows: [newStorageLocation] } = await client.query(`
       INSERT INTO storage_locations("userId", name, location, note)
       VALUES($1, $2, $3, $4)

@@ -1,5 +1,5 @@
 const express = require('express');
-const { getStorageLocationsByUserId, createStorageLocation } = require('../../db');
+const { getStorageLocationsByUserId, createStorageLocation, getStorageLocationById } = require('../../db');
 const storageLocationsRouter = express.Router();
 
 const { requireUser, requireParams } = require('../utils');
@@ -11,7 +11,7 @@ storageLocationsRouter.use((req, res, next) => {
 });
 
 storageLocationsRouter.get('/', requireUser, async (req, res, next) => {
-  const userId = req.user.id;
+  const userId = Number(req.user.id);
   try {
     const userStorageLocations = await getStorageLocationsByUserId(userId);
 
@@ -26,7 +26,7 @@ storageLocationsRouter.get('/', requireUser, async (req, res, next) => {
 });
 
 storageLocationsRouter.post('/', requireUser, requireParams({ required: ['name'] }), async (req, res, next) => {
-  const userId = req.user.id;
+  const userId = Number(req.user.id);
   const { name, location, note } = req.body;
   try {
     const newStorageLocation = await createStorageLocation({
@@ -36,13 +36,26 @@ storageLocationsRouter.post('/', requireUser, requireParams({ required: ['name']
       note,
     });
 
-    if(!newStorageLocation) {
-      throw Error('Something went wrong while trying to create new storage location.');
-    };
+    if(!newStorageLocation) throw Error('Something went wrong while trying to create new storage location.');
 
     res.send(newStorageLocation);
   } catch ({ name, message }) {
     throw ({ name, message });
+  };
+});
+
+storageLocationsRouter.get('/:locationId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const locationId = Number(req.params.locationId);
+  try {
+    const storageLocation = await getStorageLocationById(locationId);
+    
+    if (!storageLocation) throw Error('A location with that ID does not exist.');
+    if (storageLocation.userId !== userId) throw Error('You do not have permission to access that data.');
+
+    res.send(storageLocation);
+  } catch ({ name, message }) {
+    next({ name, message });
   };
 });
 

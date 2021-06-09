@@ -59,13 +59,6 @@ usersRouter.post('/register', requireParams({ required: ['email', 'password', 'd
 // Login
 usersRouter.post('/login', requireParams({ required: ['email', 'password'] }), async (req, res, next) => {
   const { email, password } = req.body;
-  // if (!email || !password) {
-  //   next({
-  //     name: 'MissingCredentialsError',
-  //     message: 'Please supply both an email and password'
-  //   });
-  // };
-
   try {
     const user = await getUser({ email, password });
     if (user) {
@@ -93,9 +86,7 @@ usersRouter.get('/:userId', requireUser, async (req, res, next) => {
   const { id } = jwt.verify(token, JWT_SECRET);
 
   try {
-    if (Number(userId) !== Number(id)) {
-      throw Error(`You do not have permission to access that user's data.`)
-    };
+    if (Number(userId) !== Number(id)) throw Error(`You do not have permission to access that user's data.`);
 
     const user = await getUserById(id);
     const userStorageLocations = await getStorageLocationsByUserId(id);
@@ -125,54 +116,52 @@ usersRouter.get('/:userId', requireUser, async (req, res, next) => {
   };
 });
 
-// My Boxes
-usersRouter.get('/:userId/boxes', requireUser, async (req, res, next) => {
-  const { userId } = req.params;
-  const token = getTokenFromRequest(req);
-  const { id } = jwt.verify(token, JWT_SECRET);
+// // My Boxes
+// usersRouter.get('/:userId/boxes', requireUser, async (req, res, next) => {
+//   const { userId } = req.params;
+//   const token = getTokenFromRequest(req);
+//   const { id } = jwt.verify(token, JWT_SECRET);
 
-  try {
-    if (Number(userId) !== Number(id)) {
-      throw Error(`You do not have permission to access that user's data.`)
-    };
+//   try {
+//     if (Number(userId) !== Number(id)) {
+//       throw Error(`You do not have permission to access that user's data.`)
+//     };
 
-    const userBoxes = await getBoxesByUserId(id);
-    if (Number(id) === Number(req.user.id)) {
-      res.send(userBoxes);
-    };
-  } catch ({ name, message }) {
-    next({ name, message });
-  };
-});
+//     const userBoxes = await getBoxesByUserId(id);
+//     if (Number(id) === Number(req.user.id)) {
+//       res.send(userBoxes);
+//     };
+//   } catch ({ name, message }) {
+//     next({ name, message });
+//   };
+// });
 
-// My Items
-usersRouter.get('/:userId/items', requireUser, async (req, res, next) => {
-  const { userId } = req.params;
-  const token = getTokenFromRequest(req);
-  const { id } = jwt.verify(token, JWT_SECRET);
+// // My Items
+// usersRouter.get('/:userId/items', requireUser, async (req, res, next) => {
+//   const { userId } = req.params;
+//   const token = getTokenFromRequest(req);
+//   const { id } = jwt.verify(token, JWT_SECRET);
 
-  try {
-    if (Number(userId) !== Number(id)) {
-      throw Error(`You do not have permission to access that user's data.`)
-    };
+//   try {
+//     if (Number(userId) !== Number(id)) {
+//       throw Error(`You do not have permission to access that user's data.`)
+//     };
 
-    const userItems = await getItemsByUserId(id);
-    if (Number(id) === Number(req.user.id)) {
-      res.send(userItems);
-    };
-  } catch ({ name, message }) {
-    next({ name, message });
-  };
-});
+//     const userItems = await getItemsByUserId(id);
+//     if (Number(id) === Number(req.user.id)) {
+//       res.send(userItems);
+//     };
+//   } catch ({ name, message }) {
+//     next({ name, message });
+//   };
+// });
 
 // Patch User Data
 usersRouter.patch('/:userId', requireUser, requireParams({ required: ['email', 'password', 'displayName'] }), async (req, res, next) => {
   const { userId } = req.params;
   const { email, password, displayName } = req.body;
   try {
-    if (Number(req.user.id) !== Number(userId) && !req.user.isAdmin) {
-      throw Error('You do not have permision to edit this account.');
-    };
+    if (Number(req.user.id) !== Number(userId) && !req.user.isAdmin) throw Error('You do not have permision to edit this account.');
 
     const updateBody = {
       id: userId,
@@ -191,9 +180,7 @@ usersRouter.patch('/:userId', requireUser, requireParams({ required: ['email', '
 usersRouter.delete('/:userId', requireUser, async (req, res, next) => {
   const { userId } = req.params;
   try {
-    if (Number(req.user.id) !== Number(userId) && !req.user.isAdmin) {
-      throw Error('You do not have permision to delete this account.');
-    };
+    if (Number(req.user.id) !== Number(userId) && !req.user.isAdmin) throw Error('You do not have permision to delete this account.');
 
     const deletedUser = await destroyUser(userId);
     res.send(deletedUser);

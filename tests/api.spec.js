@@ -52,6 +52,12 @@ describe('API', () => {
         expect.assertions(1);
         await expect(axios.post(`${API_URL}/api/users/register`, badPasswordData)).rejects.toEqual(Error('Request failed with status code 500'));
       });
+
+      it('Throws an error if required fields are missing from the request', async () => {
+        const missingFields = { email: 'nedstark@thenorth.com', password: 'IloveWolves80' };
+        expect.assertions(1);
+        await expect(axios.post(`${API_URL}/api/users/register`, missingFields)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
     });
 
     describe('POST /users/login', () => {
@@ -180,6 +186,12 @@ describe('API', () => {
         expect.assertions(1);
         await expect(axios.patch(`${API_URL}/api/users/1`, userUpdates, { headers: {'Authorization': `Bearer ${token}`}})).rejects.toEqual(Error('Request failed with status code 500'));
       });
+
+      it ('Throws an error if the request has missing required fields', async () => {
+        const missingFields = { id: 3, email: 'johnsnow@thewall.com', displayName: 'John Snow' }
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/users/${missingFields.id}`, missingFields, { headers: {'Authorization': `Bearer ${token}`}})).rejects.toEqual(Error('Request failed with status code 500'));
+      });
     });
 
     describe('DELETE /users/:userId', () => {
@@ -214,38 +226,48 @@ describe('API', () => {
   });
 
   describe('Storage Locations', () => {
-    const testUserId = 1;
+    const testUserId = 3;
     let token = null;
     let userStorageLocations = null;
+    let locationToCreateAndUpdateId = null;
+
     beforeAll(async () => {
-      const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'testuser@test.com', password: 'iLoveStuffBase1' });
+      const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'johnsnow@thewall.com', password: 'Ilovewolves900' });
       token = user.token;
       const { data: locations } = await axios.get(`${API_URL}/api/storage_locations`, { headers: {'Authorization': `Bearer ${token}`}});
       userStorageLocations = locations;
     });
 
     describe('GET /storage_locations', () => {
+      it ('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/storage_locations`)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
       it('Returns an array', () => {
         expect(Array.isArray(userStorageLocations)).toBe(true);
       });
 
+      it('Returns an empty array if the user has no storage locations', async () => {
+        expect(userStorageLocations).toEqual([])
+      }); 
+
       it('Retrieves all storage locations for the user that made the request', async () => {
+        const userWithLocationsId = 1;
         const { rows: dbUserLocations } = await client.query(`
           SELECT *
           FROM storage_locations
           WHERE "userId"=$1;
-        `, [testUserId]);
-        expect(userStorageLocations[0].userId).toBe(testUserId);
-        expect(userStorageLocations[userStorageLocations.length - 1].userId).toBe(testUserId);
-        expect(userStorageLocations.length).toBe(dbUserLocations.length);
-      });
+        `, [userWithLocationsId]);
 
-      it('Returns an empty array if the user has no storage locations', async () => {
-        const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'johnsnow@thewall.com', password: 'Ilovewolves900' });
+        const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'testuser@test.com', password: 'iLoveStuffBase1' });
         const altToken = user.token;
         const { data: locations } = await axios.get(`${API_URL}/api/storage_locations`, { headers: {'Authorization': `Bearer ${altToken}`} });
-        expect(locations).toEqual([]);
-      }); 
+
+        expect(locations[0].userId).toBe(userWithLocationsId);
+        expect(locations[locations.length - 1].userId).toBe(userWithLocationsId);
+        expect(locations.length).toBe(dbUserLocations.length);
+      });
     });
 
     describe('POST /storage_locations', () => {
@@ -255,6 +277,12 @@ describe('API', () => {
       beforeAll(async () => {
         const { data: newLocation } = await axios.post(`${API_URL}/api/storage_locations`, validLocationData, { headers: {'Authorization': `Bearer ${token}`} });
         newStorageLocation = newLocation;
+        locationToCreateAndUpdateId = newLocation.id;
+      });
+
+      it ('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.post(`${API_URL}/api/storage_locations`)).rejects.toEqual(Error('Request failed with status code 500'));
       });
       
       it('Creates a new storage location for the user that made the request', () => {
@@ -264,7 +292,29 @@ describe('API', () => {
 
       it('Throws an error when required data is not supplied in the request body', async () => {
         expect.assertions(1);
-        await expect(axios.post(`${API_URL}/api/storage_locations`, missingData, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'))
+        await expect(axios.post(`${API_URL}/api/storage_locations`, missingData, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+
+    describe('GET /storage_locations/:locationId', () => {
+      it ('Retrieves the correct storage location', async () => {
+        const { data: storageLocation } = await axios.get(`${API_URL}/api/storage_locations/${locationToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} });
+        expect(storageLocation.id).toBe(locationToCreateAndUpdateId);
+      });
+
+      it ('Throws an error if the locationId does not exist', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/storage_locations/0`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the user tries to access a locationId that is not theirs', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/storage_locations/3`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/storage_locations/${locationToCreateAndUpdateId}`)).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
   });
