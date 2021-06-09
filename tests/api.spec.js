@@ -317,5 +317,18 @@ describe('API', () => {
         await expect(axios.get(`${API_URL}/api/storage_locations/${locationToCreateAndUpdateId}`)).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
+
+    describe('PATCH /storage_locations/:locationId', () => {
+      const updateData = { name: 'trench in backyard', location: 'Home' }
+      let updatedStorageLocation = null;
+      beforeAll(async () => {
+        const { data } = await axios.patch(`${API_URL}/api/storage_locations/${locationToCreateAndUpdateId}`, updateData, { headers: {'Authorization': `Bearer ${token}`} });
+        updatedStorageLocation = data;
+      });
+      
+      it ('Updates the correct storage location', () => {
+        expect(updatedStorageLocation.id).toBe(locationToCreateAndUpdateId);
+      });
+    });
   });
 });

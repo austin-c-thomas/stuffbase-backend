@@ -59,4 +59,16 @@ storageLocationsRouter.get('/:locationId', requireUser, async (req, res, next) =
   };
 });
 
+storageLocationsRouter.patch('/:locationId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const locationId = Number(req.params.locationId);
+  try {
+    if (!req.body || Object.entries(req.body).length === 0) throw Error('Your request must include a body with at least one field to update.');
+    const storageLocationUpdates = req.body;
+    console.log('Storage Location Updates: ', storageLocationUpdates);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+})
+
 module.exports = storageLocationsRouter;
