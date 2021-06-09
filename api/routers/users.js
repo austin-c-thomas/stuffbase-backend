@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = process.env;
 const { 
   requireUser, 
-  getTokenFromRequest 
+  getTokenFromRequest, 
+  requireParams
 } = require('../utils');
 
 const {
@@ -25,7 +26,7 @@ usersRouter.use((req, res, next) => {
 });
 
 // Register
-usersRouter.post('/register', async (req, res, next) => {
+usersRouter.post('/register', requireParams({ required: ['email', 'password', 'displayName'] }), async (req, res, next) => {
   const { email, password, displayName } = req.body;
   try {
     // Check if the user already exists
@@ -56,14 +57,14 @@ usersRouter.post('/register', async (req, res, next) => {
 });
 
 // Login
-usersRouter.post('/login', async (req, res, next) => {
+usersRouter.post('/login', requireParams({ required: ['email', 'password'] }), async (req, res, next) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    next({
-      name: 'MissingCredentialsError',
-      message: 'Please supply both an email and password'
-    });
-  };
+  // if (!email || !password) {
+  //   next({
+  //     name: 'MissingCredentialsError',
+  //     message: 'Please supply both an email and password'
+  //   });
+  // };
 
   try {
     const user = await getUser({ email, password });
@@ -86,11 +87,16 @@ usersRouter.post('/login', async (req, res, next) => {
 });
 
 // Me
-usersRouter.get('/me', requireUser, async (req, res, next) => {
+usersRouter.get('/:userId', requireUser, async (req, res, next) => {
+  const { userId } = req.params;
   const token = getTokenFromRequest(req);
   const { id } = jwt.verify(token, JWT_SECRET);
 
   try {
+    if (Number(userId) !== Number(id)) {
+      throw Error(`You do not have permission to access that user's data.`)
+    };
+
     const user = await getUserById(id);
     const userStorageLocations = await getStorageLocationsByUserId(id);
     const userBoxes = await getBoxesByUserId(id);
@@ -120,11 +126,16 @@ usersRouter.get('/me', requireUser, async (req, res, next) => {
 });
 
 // My Boxes
-usersRouter.get('/me/boxes', requireUser, async (req, res, next) => {
+usersRouter.get('/:userId/boxes', requireUser, async (req, res, next) => {
+  const { userId } = req.params;
   const token = getTokenFromRequest(req);
   const { id } = jwt.verify(token, JWT_SECRET);
 
   try {
+    if (Number(userId) !== Number(id)) {
+      throw Error(`You do not have permission to access that user's data.`)
+    };
+
     const userBoxes = await getBoxesByUserId(id);
     if (Number(id) === Number(req.user.id)) {
       res.send(userBoxes);
@@ -135,11 +146,16 @@ usersRouter.get('/me/boxes', requireUser, async (req, res, next) => {
 });
 
 // My Items
-usersRouter.get('/me/items', requireUser, async (req, res, next) => {
+usersRouter.get('/:userId/items', requireUser, async (req, res, next) => {
+  const { userId } = req.params;
   const token = getTokenFromRequest(req);
   const { id } = jwt.verify(token, JWT_SECRET);
 
   try {
+    if (Number(userId) !== Number(id)) {
+      throw Error(`You do not have permission to access that user's data.`)
+    };
+
     const userItems = await getItemsByUserId(id);
     if (Number(id) === Number(req.user.id)) {
       res.send(userItems);
@@ -149,8 +165,8 @@ usersRouter.get('/me/items', requireUser, async (req, res, next) => {
   };
 });
 
-// Patch
-usersRouter.patch('/:userId', requireUser, async (req, res, next) => {
+// Patch User Data
+usersRouter.patch('/:userId', requireUser, requireParams({ required: ['email', 'password', 'displayName'] }), async (req, res, next) => {
   const { userId } = req.params;
   const { email, password, displayName } = req.body;
   try {
@@ -185,8 +201,5 @@ usersRouter.delete('/:userId', requireUser, async (req, res, next) => {
     next({ name, message });
   };
 });
-
-// Admin Routes
-// Get all users
 
 module.exports = usersRouter;

@@ -81,13 +81,14 @@ describe('API', () => {
       });
     });
 
-    describe('GET /users/me', () => {
+    describe('GET /users/:userId', () => {
       const validCredentials = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
+      let token = null;
       let userData = null;
       beforeAll(async () => {
         const { data: user } = await axios.post(`${API_URL}/api/users/login`, validCredentials);
-        const token = user.token;
-        const { data } = await axios.get(`${API_URL}/api/users/me`, { headers: {'Authorization': `Bearer ${token}`}});
+        token = user.token;
+        const { data } = await axios.get(`${API_URL}/api/users/${validCredentials.id}`, { headers: {'Authorization': `Bearer ${token}`}});
         userData = data;
       });
 
@@ -97,55 +98,60 @@ describe('API', () => {
         expect(userData.password).toBeUndefined();
       });
 
+      it('Throws an error if the user is not signed in', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/users/${validCredentials.id}`)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
       it('Throws an error if the user is unauthorized', async () => {
         expect.assertions(1);
-        await expect(axios.get(`${API_URL}/api/users/me`)).rejects.toEqual(Error('Request failed with status code 500'));
+        await expect(axios.get(`${API_URL}/api/users/2`, { headers: {'Authorization': `Bearer ${token}`}})).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
 
-    describe('GET /users/me/boxes', () => {
-      const validCredentials = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
-      let boxList = null;
-      beforeAll(async () => {
-        const { data: user } = await axios.post(`${API_URL}/api/users/login`, validCredentials);
-        const token = user.token;
-        const { data } = await axios.get(`${API_URL}/api/users/me/boxes`, { headers: {'Authorization': `Bearer ${token}`}});
-        boxList = data;
-      });
+    // describe('GET /users/:userId/boxes', () => {
+    //   const validCredentials = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
+    //   let boxList = null;
+    //   beforeAll(async () => {
+    //     const { data: user } = await axios.post(`${API_URL}/api/users/login`, validCredentials);
+    //     const token = user.token;
+    //     const { data } = await axios.get(`${API_URL}/api/users/${validCredentials.id}/boxes`, { headers: {'Authorization': `Bearer ${token}`}});
+    //     boxList = data;
+    //   });
 
-      it('Returns an array', () => {
-        expect(Array.isArray(boxList)).toBe(true);
-      });
+    //   it('Returns an array', () => {
+    //     expect(Array.isArray(boxList)).toBe(true);
+    //   });
 
-      it('Returns all of the boxes with the correct userId', async () => {
-        const dbBoxes = await getBoxesByUserId(validCredentials.id);
-        expect(boxList.length).toBe(dbBoxes.length);
-        expect(boxList[0].userId).toBe(validCredentials.id);
-        expect(boxList[boxList.length - 1].userId).toBe(validCredentials.id)
-      });
-    });
+    //   it('Returns all of the boxes with the correct userId', async () => {
+    //     const dbBoxes = await getBoxesByUserId(validCredentials.id);
+    //     expect(boxList.length).toBe(dbBoxes.length);
+    //     expect(boxList[0].userId).toBe(validCredentials.id);
+    //     expect(boxList[boxList.length - 1].userId).toBe(validCredentials.id)
+    //   });
+    // });
 
-    describe('GET /users/me/items', () => {
-      const validCredentials = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
-      let itemList = null;
-      beforeAll(async () => {
-        const { data: user } = await axios.post(`${API_URL}/api/users/login`, validCredentials);
-        const token = user.token;
-        const { data } = await axios.get(`${API_URL}/api/users/me/items`, { headers: {'Authorization': `Bearer ${token}`}});
-        itemList = data;
-      });
+    // describe('GET /users/:userId/items', () => {
+    //   const validCredentials = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
+    //   let itemList = null;
+    //   beforeAll(async () => {
+    //     const { data: user } = await axios.post(`${API_URL}/api/users/login`, validCredentials);
+    //     const token = user.token;
+    //     const { data } = await axios.get(`${API_URL}/api/users/${validCredentials.id}/items`, { headers: {'Authorization': `Bearer ${token}`}});
+    //     itemList = data;
+    //   });
 
-      it('Returns an array', () => {
-        expect(Array.isArray(itemList)).toBe(true);
-      });
+    //   it('Returns an array', () => {
+    //     expect(Array.isArray(itemList)).toBe(true);
+    //   });
 
-      it('Returns all of the boxes with the correct userId', async () => {
-        const dbItems = await getItemsByUserId(validCredentials.id);
-        expect(itemList.length).toBe(dbItems.length);
-        expect(itemList[0].userId).toBe(validCredentials.id);
-        expect(itemList[itemList.length - 1].userId).toBe(validCredentials.id)
-      });
-    });
+    //   it('Returns all of the boxes with the correct userId', async () => {
+    //     const dbItems = await getItemsByUserId(validCredentials.id);
+    //     expect(itemList.length).toBe(dbItems.length);
+    //     expect(itemList[0].userId).toBe(validCredentials.id);
+    //     expect(itemList[itemList.length - 1].userId).toBe(validCredentials.id)
+    //   });
+    // });
 
     describe('PATCH /users/:userId', () => {
       const userUpdates = { id: 3, email: 'johnsnow@thewall.com', password: 'Ilovewolves900', displayName: 'John Snow' }
@@ -207,4 +213,59 @@ describe('API', () => {
     });
   });
 
+  describe('Storage Locations', () => {
+    const testUserId = 1;
+    let token = null;
+    let userStorageLocations = null;
+    beforeAll(async () => {
+      const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'testuser@test.com', password: 'iLoveStuffBase1' });
+      token = user.token;
+      const { data: locations } = await axios.get(`${API_URL}/api/storage_locations`, { headers: {'Authorization': `Bearer ${token}`}});
+      userStorageLocations = locations;
+    });
+
+    describe('GET /storage_locations', () => {
+      it('Returns an array', () => {
+        expect(Array.isArray(userStorageLocations)).toBe(true);
+      });
+
+      it('Retrieves all storage locations for the user that made the request', async () => {
+        const { rows: dbUserLocations } = await client.query(`
+          SELECT *
+          FROM storage_locations
+          WHERE "userId"=$1;
+        `, [testUserId]);
+        expect(userStorageLocations[0].userId).toBe(testUserId);
+        expect(userStorageLocations[userStorageLocations.length - 1].userId).toBe(testUserId);
+        expect(userStorageLocations.length).toBe(dbUserLocations.length);
+      });
+
+      it('Returns an empty array if the user has no storage locations', async () => {
+        const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'johnsnow@thewall.com', password: 'Ilovewolves900' });
+        const altToken = user.token;
+        const { data: locations } = await axios.get(`${API_URL}/api/storage_locations`, { headers: {'Authorization': `Bearer ${altToken}`} });
+        expect(locations).toEqual([]);
+      }); 
+    });
+
+    describe('POST /storage_locations', () => {
+      const validLocationData = { name: 'Hole in backyard', location: 'Remote', note: 'For valuables' };
+      const missingData = { location: 'Remote', note: 'For valuables' };
+      let newStorageLocation = null;
+      beforeAll(async () => {
+        const { data: newLocation } = await axios.post(`${API_URL}/api/storage_locations`, validLocationData, { headers: {'Authorization': `Bearer ${token}`} });
+        newStorageLocation = newLocation;
+      });
+      
+      it('Creates a new storage location for the user that made the request', () => {
+        expect(newStorageLocation.id).toBeDefined();
+        expect(newStorageLocation.userId).toBe(testUserId);
+      });
+
+      it('Throws an error when required data is not supplied in the request body', async () => {
+        expect.assertions(1);
+        await expect(axios.post(`${API_URL}/api/storage_locations`, missingData, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'))
+      });
+    });
+  });
 });
