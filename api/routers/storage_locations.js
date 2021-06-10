@@ -1,5 +1,5 @@
 const express = require('express');
-const { getStorageLocationsByUserId, createStorageLocation, getStorageLocationById } = require('../../db');
+const { getStorageLocationsByUserId, createStorageLocation, getStorageLocationById, updateStorageLocation } = require('../../db');
 const storageLocationsRouter = express.Router();
 
 const { requireUser, requireParams } = require('../utils');
@@ -62,13 +62,30 @@ storageLocationsRouter.get('/:locationId', requireUser, async (req, res, next) =
 storageLocationsRouter.patch('/:locationId', requireUser, async (req, res, next) => {
   const userId = Number(req.user.id);
   const locationId = Number(req.params.locationId);
+  if (!req.body || Object.entries(req.body).length === 0) {
+    next({
+      name: 'MissingRequestBody',
+      message: 'Your request must include a body with at least one field to update.'  
+    });
+  };
+
   try {
-    if (!req.body || Object.entries(req.body).length === 0) throw Error('Your request must include a body with at least one field to update.');
-    const storageLocationUpdates = req.body;
-    console.log('Storage Location Updates: ', storageLocationUpdates);
+    const locationToUpdate = await getStorageLocationById(locationId);
+    if (Number(locationToUpdate.userId) !== userId) throw Error('You do not have permission to change that data.');
+    const updateFields = {...req.body, id: locationId};
+              // Typescript: updateFields: {
+              //   id: number;  
+              //   userId: number | undefined;
+              //   name: string | undefined;
+              //   location: text | undefined;
+              //   note: text | undefined;
+              // }
+    const updatedStorageLocation = await updateStorageLocation(updateFields);
+    if (!updateFields) throw Error('DB errorStorage Location was unable to update.');
+    res.send(updatedStorageLocation);
   } catch ({ name, message }) {
     next({ name, message });
   };
-})
+});
 
 module.exports = storageLocationsRouter;

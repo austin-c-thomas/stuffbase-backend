@@ -329,6 +329,26 @@ describe('API', () => {
       it ('Updates the correct storage location', () => {
         expect(updatedStorageLocation.id).toBe(locationToCreateAndUpdateId);
       });
+
+      it ('Updates the fields passed in the request', () => {
+        expect(updatedStorageLocation.name).toBe(updateData.name);
+        expect(updatedStorageLocation.location).toBe(updateData.location);
+      });
+
+      it ('Throws an error if nothing is supplied in the request body', async () => {
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/storage_locations/${locationToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the user tries to update a locationId that is not theirs', async () => {
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/storage_locations/3`, updateData, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/storage_locations/${locationToCreateAndUpdateId}`, updateData)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
     });
   });
 });
