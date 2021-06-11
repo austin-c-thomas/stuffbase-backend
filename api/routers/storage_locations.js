@@ -26,10 +26,7 @@ storageLocationsRouter.get('/', requireUser, async (req, res, next) => {
   const userId = Number(req.user.id);
   try {
     const userStorageLocations = await getStorageLocationsByUserId(userId);
-
-    if (!userStorageLocations) {
-      throw Error('You currently have no storage locations.');
-    };
+    if (!userStorageLocations) next(generateError('DatabaseError'));
 
     res.send(userStorageLocations);
   } catch ({ name, message }) {

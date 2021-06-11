@@ -116,50 +116,6 @@ describe('API', () => {
       });
     });
 
-    // describe('GET /users/:userId/boxes', () => {
-    //   const validCredentials = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
-    //   let boxList = null;
-    //   beforeAll(async () => {
-    //     const { data: user } = await axios.post(`${API_URL}/api/users/login`, validCredentials);
-    //     const token = user.token;
-    //     const { data } = await axios.get(`${API_URL}/api/users/${validCredentials.id}/boxes`, { headers: {'Authorization': `Bearer ${token}`}});
-    //     boxList = data;
-    //   });
-
-    //   it('Returns an array', () => {
-    //     expect(Array.isArray(boxList)).toBe(true);
-    //   });
-
-    //   it('Returns all of the boxes with the correct userId', async () => {
-    //     const dbBoxes = await getBoxesByUserId(validCredentials.id);
-    //     expect(boxList.length).toBe(dbBoxes.length);
-    //     expect(boxList[0].userId).toBe(validCredentials.id);
-    //     expect(boxList[boxList.length - 1].userId).toBe(validCredentials.id)
-    //   });
-    // });
-
-    // describe('GET /users/:userId/items', () => {
-    //   const validCredentials = { id: 1, email: 'testuser@test.com', password: 'iLoveStuffBase1', displayName: 'TestUser1' };
-    //   let itemList = null;
-    //   beforeAll(async () => {
-    //     const { data: user } = await axios.post(`${API_URL}/api/users/login`, validCredentials);
-    //     const token = user.token;
-    //     const { data } = await axios.get(`${API_URL}/api/users/${validCredentials.id}/items`, { headers: {'Authorization': `Bearer ${token}`}});
-    //     itemList = data;
-    //   });
-
-    //   it('Returns an array', () => {
-    //     expect(Array.isArray(itemList)).toBe(true);
-    //   });
-
-    //   it('Returns all of the boxes with the correct userId', async () => {
-    //     const dbItems = await getItemsByUserId(validCredentials.id);
-    //     expect(itemList.length).toBe(dbItems.length);
-    //     expect(itemList[0].userId).toBe(validCredentials.id);
-    //     expect(itemList[itemList.length - 1].userId).toBe(validCredentials.id)
-    //   });
-    // });
-
     describe('PATCH /users/:userId', () => {
       const userUpdates = { id: 3, email: 'johnsnow@thewall.com', password: 'Ilovewolves900', displayName: 'John Snow' }
       let userPreUpdate = null;
@@ -226,12 +182,13 @@ describe('API', () => {
     });
   });
 
+  // Storage Locations
   describe('Storage Locations', () => {
     const testUserId = 3;
     let token = null;
     let userStorageLocations = null;
     let locationToCreateAndUpdateId = null;
-    let altToken = null;
+    let seedToken = null;
 
     beforeAll(async () => {
       const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'johnsnow@thewall.com', password: 'Ilovewolves900' });
@@ -263,8 +220,8 @@ describe('API', () => {
         `, [userWithLocationsId]);
 
         const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'testuser@test.com', password: 'iLoveStuffBase1' });
-        altToken = user.token;
-        const { data: locations } = await axios.get(`${API_URL}/api/storage_locations`, { headers: {'Authorization': `Bearer ${altToken}`} });
+        seedToken = user.token;
+        const { data: locations } = await axios.get(`${API_URL}/api/storage_locations`, { headers: {'Authorization': `Bearer ${seedToken}`} });
 
         expect(locations[0].userId).toBe(userWithLocationsId);
         expect(locations[locations.length - 1].userId).toBe(userWithLocationsId);
@@ -362,7 +319,7 @@ describe('API', () => {
 
       it('Does not allow the deletion of a location with contents', async () => {
         expect.assertions(1);
-        await expect(axios.delete(`${API_URL}/api/storage_locations/${locationWithContentsId}`, { headers: {'Authorization': `Bearer ${altToken}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+        await expect(axios.delete(`${API_URL}/api/storage_locations/${locationWithContentsId}`, { headers: {'Authorization': `Bearer ${seedToken}`} })).rejects.toEqual(Error('Request failed with status code 500'));
       });
 
       it('Removes the storage location from the db', async () => {
@@ -379,6 +336,56 @@ describe('API', () => {
       it ('Throws an error if the request is made without a token', async () => {
         expect.assertions(1);
         await expect(axios.delete(`${API_URL}/api/storage_locations/3`)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+  });
+
+  // Items
+  describe('Items', () => {
+    let seedUserId = null;
+    let testUserId = null;
+    let token = null;
+    let testUserItems = null;
+    let seedUserItems = null;
+    let itemToCreateAndUpdate = null;
+    let seedToken = null;
+    beforeAll(async () => {
+      const { data: test } = await axios.post(`${API_URL}/api/users/login`, { email: 'johnsnow@thewall.com', password: 'Ilovewolves900' });
+      token = test.token;
+      testUserId = test.user.id;
+
+      const { data: seed } = await axios.post(`${API_URL}/api/users/login`, { email: 'testuser@test.com', password: 'iLoveStuffBase1' });
+      seedToken = seed.token;
+      seedUserId = seed.user.id;
+    });
+
+    describe('GET /items', () => {
+      beforeAll(async () => {
+        const { data: testItems } = await axios.get(`${API_URL}/api/items`, { headers: {'Authorization': `Bearer ${token}`}});
+        testUserItems = testItems; 
+        const { data: seedItems } = await axios.get(`${API_URL}/api/items`, { headers: {'Authorization': `Bearer ${seedToken}`}});
+        seedUserItems = seedItems; 
+      });
+
+      it('Returns an array', () => {
+        expect(Array.isArray(testUserItems)).toBe(true);
+        expect(Array.isArray(seedUserItems)).toBe(true);
+      });
+
+      it('Returns an empty array if the user has no items', () => {
+        expect(testUserItems).toEqual([]);
+      });
+
+      it('If user has items, returns only the items belonging to the user that made the request', async () => {
+        const { rows: itemsFromDb } = await client.query(`SELECT * FROM items WHERE "userId"=$1;`, [seedUserId]);
+        expect(itemsFromDb.length).toBe(seedUserItems.length);
+        expect(seedUserItems[0].userId).toBe(seedUserId);
+        expect(seedUserItems[seedUserItems.length - 1].userId).toBe(seedUserId);
+      });
+
+      it('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/items`)).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
   });
