@@ -81,10 +81,10 @@ storageLocationsRouter.patch('/:locationId', requireUser, async (req, res, next)
   };
 
   try {
-    const locationToUpdate = await getStorageLocationById(locationId);
-
     // Check that the location belongs to the user making the request
+    const locationToUpdate = await getStorageLocationById(locationId);
     if (Number(locationToUpdate.userId) !== userId) next(generateError('UnauthorizedUserError'));
+    
     const updateFields = {...req.body, id: locationId};
               // Typescript: updateFields: {
               //   id: number;  

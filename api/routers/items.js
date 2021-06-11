@@ -5,6 +5,7 @@ const {
   getItemsByUserId, 
   createItem,
   getItemById,
+  updateItem,
 } = require('../../db');
 
 const {
@@ -57,6 +58,32 @@ itemsRouter.get('/:itemId', requireUser, async (req, res, next) => {
     if (Number(item.userId) !== userId) throw Error('You do not have permission to access that data.');
 
     res.send(item);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+itemsRouter.patch('/:itemId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const itemId = Number(req.params.itemId);
+
+  // If the request is made with nothing in the body, throw an error.
+  if (!req.body || Object.entries(req.body).length === 0) {
+    next({
+      name: 'MissingRequestBody',
+      message: 'Your request must include a body with at least one field to update.'  
+    });
+  };
+
+  try {
+    // Check that the item belongs to the user making the request
+    const itemToUpdate = await getItemById(itemId);
+    if (Number(itemToUpdate.userId) !== userId) throw Error('You do not have permission to access that data.');
+    
+    const updateFields = {...req.body, id: itemId};
+    const updatedItem = await updateItem(updateFields);
+    if (!updateFields) throw Error('The database experienced an error while trying to process your request.');
+    res.send(updatedItem);
   } catch ({ name, message }) {
     next({ name, message });
   };

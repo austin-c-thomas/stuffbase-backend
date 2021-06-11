@@ -443,11 +443,42 @@ describe('API', () => {
         await expect(axios.get(`${API_URL}/api/items/3`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
       });
 
-
-
       it ('Throws an error if the request is made without a token', async () => {
         expect.assertions(1);
         await expect(axios.get(`${API_URL}/api/items/${itemToCreateAndUpdateId}`)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+
+    describe('PATCH /items/:itemId', () => {
+      const updateData = { name: `Ole' Trusty`, description: 'Long sword' };
+      let updatedItem = null;
+      beforeAll(async () => {
+        const { data } = await axios.patch(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, updateData, { headers: {'Authorization': `Bearer ${token}`} });
+        updatedItem = data;
+      });
+      
+      it ('Updates the correct item', () => {
+        expect(updatedItem.id).toBe(itemToCreateAndUpdateId);
+      });
+
+      it ('Updates the fields passed in the request', () => {
+        expect(updatedItem.name).toBe(updateData.name);
+        expect(updatedItem.description).toBe(updateData.description);
+      });
+
+      it ('Throws an error if nothing is supplied in the request body', async () => {
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the user tries to update an itemId that is not theirs', async () => {
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/items/1`, updateData, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, updateData)).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
 
