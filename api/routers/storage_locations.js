@@ -26,10 +26,7 @@ storageLocationsRouter.get('/', requireUser, async (req, res, next) => {
   const userId = Number(req.user.id);
   try {
     const userStorageLocations = await getStorageLocationsByUserId(userId);
-
-    if (!userStorageLocations) {
-      throw Error('You currently have no storage locations.');
-    };
+    if (!userStorageLocations) next(generateError('DatabaseError'));
 
     res.send(userStorageLocations);
   } catch ({ name, message }) {
@@ -84,10 +81,10 @@ storageLocationsRouter.patch('/:locationId', requireUser, async (req, res, next)
   };
 
   try {
-    const locationToUpdate = await getStorageLocationById(locationId);
-
     // Check that the location belongs to the user making the request
+    const locationToUpdate = await getStorageLocationById(locationId);
     if (Number(locationToUpdate.userId) !== userId) next(generateError('UnauthorizedUserError'));
+    
     const updateFields = {...req.body, id: locationId};
               // Typescript: updateFields: {
               //   id: number;  
