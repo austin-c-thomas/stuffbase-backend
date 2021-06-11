@@ -238,6 +238,11 @@ describe('Database', () => {
         expect(noContents.boxes).toEqual([]);
         expect(noContents.items).toEqual([]);
       });
+
+      // it('Throws an error if the location does not exist', async () => {
+      //   expect.assertions(1);
+      //   await expect(getStorageLocationContents(0)).rejects.toEqual(Error('something'));
+      // });
     });
 
     describe('updateStorageLocation', () => {

@@ -1,8 +1,20 @@
 const express = require('express');
-const { getStorageLocationsByUserId, createStorageLocation, getStorageLocationById, updateStorageLocation, destroyStorageLocation } = require('../../db');
 const storageLocationsRouter = express.Router();
 
-const { requireUser, requireParams, generateError } = require('../utils');
+const { 
+  getStorageLocationsByUserId, 
+  createStorageLocation, 
+  getStorageLocationById, 
+  updateStorageLocation, 
+  destroyStorageLocation, 
+  getStorageLocationContents 
+} = require('../../db');
+
+const { 
+  requireUser, 
+  requireParams, 
+  generateError 
+} = require('../utils');
 
 
 storageLocationsRouter.use((req, res, next) => {
@@ -101,6 +113,13 @@ storageLocationsRouter.delete('/:locationId', requireUser, async (req, res, next
     if (Number(locationToDelete.userId) !== userId) next(generateError('UnauthorizedUserError'));
 
     // Throw an error if the location has items or boxes in it
+    const locationContents = await getStorageLocationContents(locationId);
+    if (locationContents.boxes.length > 0 || locationContents.items.length > 0) {
+      next({
+        name: 'LocationHasContents',
+        message: `This location contains boxes and/or items. You must move this location's contents somewhere else before deleting it.`
+      });
+    };
 
     // Delete the storage location
     const deletedStorageLocation = await destroyStorageLocation(locationId);

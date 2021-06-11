@@ -48,18 +48,19 @@ const getStorageLocationsByUserId = async (userId) => {
 };
 
 const getStorageLocationContents = async (id) => {
+  const idToQuery = Number(id);
   try {
     const { rows: boxes } = await client.query(`
       SELECT *
       FROM boxes
       WHERE "locationId"=$1;
-    `, [id]);
+    `, [idToQuery]);
     
     const { rows: items } = await client.query(`
       SELECT *
       FROM items
       WHERE "locationId"=$1;
-    `, [id]);
+    `, [idToQuery]);
 
     return ({
       boxes: boxes.length > 0 ? boxes : [],

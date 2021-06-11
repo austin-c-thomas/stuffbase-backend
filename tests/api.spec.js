@@ -6,6 +6,7 @@ const {
   getBoxesByUserId,
   getItemsByUserId,
   getStorageLocationsByUserId,
+  getStorageLocationById,
 } = require('../db');
 require('dotenv').config();
 const client = require('../db/client');
@@ -230,6 +231,7 @@ describe('API', () => {
     let token = null;
     let userStorageLocations = null;
     let locationToCreateAndUpdateId = null;
+    let altToken = null;
 
     beforeAll(async () => {
       const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'johnsnow@thewall.com', password: 'Ilovewolves900' });
@@ -261,7 +263,7 @@ describe('API', () => {
         `, [userWithLocationsId]);
 
         const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'testuser@test.com', password: 'iLoveStuffBase1' });
-        const altToken = user.token;
+        altToken = user.token;
         const { data: locations } = await axios.get(`${API_URL}/api/storage_locations`, { headers: {'Authorization': `Bearer ${altToken}`} });
 
         expect(locations[0].userId).toBe(userWithLocationsId);
@@ -348,6 +350,35 @@ describe('API', () => {
       it ('Throws an error if the request is made without a token', async () => {
         expect.assertions(1);
         await expect(axios.patch(`${API_URL}/api/storage_locations/${locationToCreateAndUpdateId}`, updateData)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+
+    describe('DELETE /storage_locations/:locationId', () => {
+      const locationWithContentsId = 3;
+      let deletedStorageLocation = null;
+      beforeAll(async () => {
+        deletedStorageLocation = await axios.delete(`${API_URL}/api/storage_locations/${locationToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} })
+      });
+
+      it('Does not allow the deletion of a location with contents', async () => {
+        expect.assertions(1);
+        await expect(axios.delete(`${API_URL}/api/storage_locations/${locationWithContentsId}`, { headers: {'Authorization': `Bearer ${altToken}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it('Removes the storage location from the db', async () => {
+        expect.assertions(2);
+        expect(deletedStorageLocation).toBeDefined();
+        await expect(getStorageLocationById(deletedStorageLocation.id)).rejects.toEqual(Error('There is no location with that ID.'));
+      });
+
+      it ('Throws an error if the user tries to delete a locationId that is not theirs', async () => {
+        expect.assertions(1);
+        await expect(axios.delete(`${API_URL}/api/storage_locations/3`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.delete(`${API_URL}/api/storage_locations/3`)).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
   });
