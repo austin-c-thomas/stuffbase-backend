@@ -188,6 +188,7 @@ describe('API', () => {
     let token = null;
     let userStorageLocations = null;
     let locationToCreateAndUpdateId = null;
+    let secondaryLocationId = null;
     let seedToken = null;
 
     beforeAll(async () => {
@@ -231,12 +232,17 @@ describe('API', () => {
 
     describe('POST /storage_locations', () => {
       const validLocationData = { name: 'Hole in backyard', location: 'Remote', note: 'For valuables' };
+      const secondaryLocationData = { name: 'Iron Bank', location: 'Remote'};
       const missingData = { location: 'Remote', note: 'For valuables' };
       let newStorageLocation = null;
+      let secondaryLocation = null;
       beforeAll(async () => {
         const { data: newLocation } = await axios.post(`${API_URL}/api/storage_locations`, validLocationData, { headers: {'Authorization': `Bearer ${token}`} });
         newStorageLocation = newLocation;
         locationToCreateAndUpdateId = newLocation.id;
+        const { data: secondLocation } = await axios.post(`${API_URL}/api/storage_locations`, secondaryLocationData, { headers: {'Authorization': `Bearer ${token}`} });
+        secondaryLocation = secondLocation;
+        secondaryLocationId = secondLocation.id;
       });
 
       it ('Throws an error if the request is made without a token', async () => {
@@ -388,5 +394,37 @@ describe('API', () => {
         await expect(axios.get(`${API_URL}/api/items`)).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
+
+    describe('POST /items', () => {
+      const allFields = { name: 'Longsword', description: `Ole' trusty`, category: 'Weapons', quantity: 1, imageUrl: 'www.imgurl.com/longsword', locationId: 9 };
+      const someFields = { name: 'Winter Coat', quantity: 2, userId: testUserId, locationId: 9 };
+      const requiredFieldsMissing = { description: `Ole' trusty`, category: 'Weapons', quantity: 1, imageUrl: 'www.imgurl.com/longsword' };
+      let secondItem = null;
+      beforeAll(async () => {
+        const { data: newItem } = await axios.post(`${API_URL}/api/items`, allFields, { headers: {'Authorization': `Bearer ${token}`}});
+        itemToCreateAndUpdate = newItem;
+        const { data: newItem2 } = await axios.post(`${API_URL}/api/items`, someFields, { headers: {'Authorization': `Bearer ${token}`}});
+        secondItem = newItem2;
+      });
+
+      it('Adds a new item to the database if required fields are provided in the request body', () => {
+        expect(itemToCreateAndUpdate.id).toBeDefined();
+        expect(itemToCreateAndUpdate.userId).toBe(testUserId);
+        expect(secondItem.id).toBeDefined();
+        expect(secondItem.userId).toBe(testUserId);
+      });
+
+      it('Throws an error if required data is not send in the request body', async () => {
+        expect.assertions(1);
+        await expect(axios.post(`${API_URL}/api/items`, requiredFieldsMissing, { headers: {'Authorization': `Bearer ${token}`}})).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.post(`${API_URL}/api/items`, allFields)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+
+    
   });
 });
