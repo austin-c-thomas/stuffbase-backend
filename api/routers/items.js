@@ -6,6 +6,7 @@ const {
   createItem,
   getItemById,
   updateItem,
+  destroyItem,
 } = require('../../db');
 
 const {
@@ -84,6 +85,24 @@ itemsRouter.patch('/:itemId', requireUser, async (req, res, next) => {
     const updatedItem = await updateItem(updateFields);
     if (!updateFields) throw Error('The database experienced an error while trying to process your request.');
     res.send(updatedItem);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+itemsRouter.delete('/:itemId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const itemId = Number(req.params.itemId);
+  try {
+    // Check that the item belongs to the user making the request
+    const itemToDelete = await getItemById(itemId);
+    if (Number(itemToDelete.userId) !== userId) throw Error('You do not have permission to access that data.');
+
+    // Delete the item
+    console.log(itemToDelete);
+    const deletedItem = await destroyItem(itemId);
+    if (!deletedItem) throw Error('The database experienced an error while trying to process your request.');
+    res.send(deletedItem);
   } catch ({ name, message }) {
     next({ name, message });
   };

@@ -118,7 +118,7 @@ const updateItem = async (item) => {
   };
 };
 
-const destroyItem = async ({ id }) => {
+const destroyItem = async (id) => {
   try {
     // If the item is in a box, delete the box item.
     const { rows: [boxItem] } = await client.query(`

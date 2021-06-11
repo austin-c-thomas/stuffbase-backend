@@ -7,6 +7,7 @@ const {
   getItemsByUserId,
   getStorageLocationsByUserId,
   getStorageLocationById,
+  getItemById,
 } = require('../db');
 require('dotenv').config();
 const client = require('../db/client');
@@ -479,6 +480,30 @@ describe('API', () => {
       it ('Throws an error if the request is made without a token', async () => {
         expect.assertions(1);
         await expect(axios.patch(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, updateData)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+
+    describe('DELETE /items/:itemId', () => {
+      let deletedItem = null;
+      beforeAll(async () => {
+        const { data: item} = await axios.delete(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} })
+        deletedItem = item;
+      });
+
+      it('Removes the item from the db', async () => {
+        expect.assertions(2);
+        expect(deletedItem).toBeDefined();
+        await expect(getItemById(deletedItem.id)).rejects.toEqual(Error('There is no item with that ID.'));
+      });
+
+      it ('Throws an error if the user tries to delete a itemId that is not theirs', async () => {
+        expect.assertions(1);
+        await expect(axios.delete(`${API_URL}/api/items/1`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.delete(`${API_URL}/api/items/1`)).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
 
