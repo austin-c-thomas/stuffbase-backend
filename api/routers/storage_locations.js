@@ -1,8 +1,8 @@
 const express = require('express');
-const { getStorageLocationsByUserId, createStorageLocation, getStorageLocationById, updateStorageLocation } = require('../../db');
+const { getStorageLocationsByUserId, createStorageLocation, getStorageLocationById, updateStorageLocation, destroyStorageLocation } = require('../../db');
 const storageLocationsRouter = express.Router();
 
-const { requireUser, requireParams } = require('../utils');
+const { requireUser, requireParams, generateError } = require('../utils');
 
 
 storageLocationsRouter.use((req, res, next) => {
@@ -36,7 +36,7 @@ storageLocationsRouter.post('/', requireUser, requireParams({ required: ['name']
       note,
     });
 
-    if(!newStorageLocation) throw Error('Something went wrong while trying to create new storage location.');
+    if(!newStorageLocation) next(generateError('DatabaseError'));
 
     res.send(newStorageLocation);
   } catch ({ name, message }) {
@@ -62,6 +62,8 @@ storageLocationsRouter.get('/:locationId', requireUser, async (req, res, next) =
 storageLocationsRouter.patch('/:locationId', requireUser, async (req, res, next) => {
   const userId = Number(req.user.id);
   const locationId = Number(req.params.locationId);
+
+  // If the request is made with nothing in the body, throw an error.
   if (!req.body || Object.entries(req.body).length === 0) {
     next({
       name: 'MissingRequestBody',
@@ -71,7 +73,9 @@ storageLocationsRouter.patch('/:locationId', requireUser, async (req, res, next)
 
   try {
     const locationToUpdate = await getStorageLocationById(locationId);
-    if (Number(locationToUpdate.userId) !== userId) throw Error('You do not have permission to change that data.');
+
+    // Check that the location belongs to the user making the request
+    if (Number(locationToUpdate.userId) !== userId) next(generateError('UnauthorizedUserError'));
     const updateFields = {...req.body, id: locationId};
               // Typescript: updateFields: {
               //   id: number;  
@@ -81,8 +85,27 @@ storageLocationsRouter.patch('/:locationId', requireUser, async (req, res, next)
               //   note: text | undefined;
               // }
     const updatedStorageLocation = await updateStorageLocation(updateFields);
-    if (!updateFields) throw Error('DB errorStorage Location was unable to update.');
+    if (!updateFields) next(generateError('DatabaseError'));
     res.send(updatedStorageLocation);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+storageLocationsRouter.delete('/:locationId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const locationId = Number(req.params.locationId);
+  try {
+    // Check that the location belongs to the user making the request
+    const locationToDelete = await getStorageLocationById(locationId);
+    if (Number(locationToDelete.userId) !== userId) next(generateError('UnauthorizedUserError'));
+
+    // Throw an error if the location has items or boxes in it
+
+    // Delete the storage location
+    const deletedStorageLocation = await destroyStorageLocation(locationId);
+    if (!deletedStorageLocation) next(generateError('DatabaseError'));
+    res.send(deletedStorageLocation);
   } catch ({ name, message }) {
     next({ name, message });
   };

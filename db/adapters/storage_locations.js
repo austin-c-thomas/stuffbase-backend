@@ -47,6 +47,30 @@ const getStorageLocationsByUserId = async (userId) => {
   };
 };
 
+const getStorageLocationContents = async (id) => {
+  try {
+    const { rows: boxes } = await client.query(`
+      SELECT *
+      FROM boxes
+      WHERE "locationId"=$1;
+    `, [id]);
+    
+    const { rows: items } = await client.query(`
+      SELECT *
+      FROM items
+      WHERE "locationId"=$1;
+    `, [id]);
+
+    return ({
+      boxes: boxes.length > 0 ? boxes : [],
+      items: items.length > 0 ? items : []
+    });
+
+  } catch (error) {
+    throw error;
+  };
+};
+
 const updateStorageLocation = async (storageLocationUpdates) => {
   if (!storageLocationUpdates.id) {
     throw Error('You must supply the storage location ID in your request.')
@@ -94,6 +118,7 @@ module.exports = {
   createStorageLocation,
   getStorageLocationById,
   getStorageLocationsByUserId,
+  getStorageLocationContents,
   updateStorageLocation,
   destroyStorageLocation,
 }

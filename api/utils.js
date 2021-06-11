@@ -32,28 +32,16 @@ const requireParams = ({ required }) => {
   };
 };
 
-// const requireParamsAuth = (req, res, next) => {
-//   const { userId } = req.params;
-//   const token = getTokenFromRequest(req);
-//   const { id } = jwt.verify(token, JWT_SECRET);
-//   if (Number(userId) !== Number(id)) {
+// const requireAdmin = (req, res, next) => {
+//   if (!req.user.idAdmin) {
 //     next({
 //       name: 'UnauthorizedUserError',
-//       message: `You do not have permission to access that user's data.`
+//       message: 'You must be an administrator to perform this action.',
 //     });
 //   };
-// };
-
-const requireAdmin = (req, res, next) => {
-  if (!req.user.idAdmin) {
-    next({
-      name: 'UnauthorizedUserError',
-      message: 'You must be an administrator to perform this action.',
-    });
-  };
   
-  next();
-};
+//   next();
+// };
 
 const getTokenFromRequest = (req, res, next) => {
   const auth = req.header('Authorization');
@@ -62,9 +50,21 @@ const getTokenFromRequest = (req, res, next) => {
   return token;
 };
 
+const generateError = (errorName) => {
+  let errorMessage = '';
+  if (errorName === 'UnauthorizedUserError') errorMessage = 'You do not have permission to access that data.';
+  if (errorName === 'MissingRequestBody') errorMessage = 'Your request must include a body.'
+  if (errorName === 'DatabaseError') errorMessage = 'The database experienced an error while trying to process your request.';
+
+  return ({
+    error: errorName,
+    message: errorMessage,
+  });
+}
+
 module.exports = {
   requireUser,
   requireParams,
-  requireAdmin,
   getTokenFromRequest,
+  generateError,
 };

@@ -29,7 +29,8 @@ const {
   getStorageLocationsByUserId,
   getUserByEmail,
   destroyUser,
-  getUserById
+  getUserById,
+  getStorageLocationContents
 } = require('../db');
 
 // Database Tests
@@ -121,7 +122,6 @@ describe('Database', () => {
           FROM users
           WHERE id=$1;
         `, [1]);
-        console.log(user);
         userToUpdate = user;
       })
       
@@ -182,11 +182,13 @@ describe('Database', () => {
   // Storage Locations
   describe('Storage_Locations', () => {
     const testLocation = { id: 3, userId: 1, name: '5x5 Storage Unit', location: 'Remote' };
+    let newLocation = null;
+    let newLocationId = null;
     describe('createStorageLocation', () => {
       const locationToCreate = { userId: 1, name: 'Hall Closet', location: 'Home', note: 'For cleaning supplies' };
-      let newLocation = null;
       beforeAll(async () => {
         newLocation = await createStorageLocation(locationToCreate);
+        newLocationId = newLocation.id;
       });
 
       it('Creates a new storage location in the db table', async () => {
@@ -220,6 +222,21 @@ describe('Database', () => {
       it('Returns only storage locations with the correct userId', () => {
         const locationsWithCorrectId = storageLocationList.filter((location) => location.userId === userId);
         expect(locationsWithCorrectId.length).toBe(storageLocationList.length);
+      });
+    });
+
+    describe('getStorageLocationContents', () => {
+      const locationWithContentsId = 3;
+      it('Returns an object containing boxes and items', async () => {
+        const locationContents = await getStorageLocationContents(locationWithContentsId);
+        expect(locationContents.boxes).toBeDefined();
+        expect(locationContents.items).toBeDefined();
+      });
+
+      it('If the location has no contents, contains empty arrays in the return object', async () => {
+        const noContents = await getStorageLocationContents(newLocationId);
+        expect(noContents.boxes).toEqual([]);
+        expect(noContents.items).toEqual([]);
       });
     });
 
