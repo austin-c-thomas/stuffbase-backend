@@ -4,6 +4,7 @@ const itemsRouter = express.Router();
 const { 
   getItemsByUserId, 
   createItem,
+  getItemById,
 } = require('../../db');
 
 const {
@@ -31,7 +32,6 @@ itemsRouter.get('/', requireUser, async (req, res, next) => {
 
 itemsRouter.post('/', requireUser, requireParams({ required: ['name', 'locationId'] }), async (req, res, next) => {
   const userId = Number(req.user.id);
-  // const { name, description, category, imageURL } = req.body;
   const locationId = Number(req.body.locationId);
   let quantity;
   if (req.body.quantity) {
@@ -42,6 +42,21 @@ itemsRouter.post('/', requireUser, requireParams({ required: ['name', 'locationI
     const newItem = await createItem(itemData);
     if (!newItem) next(generateError('DatabaseError'));
     res.send(newItem);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+itemsRouter.get('/:itemId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const itemId = Number(req.params.itemId);
+  try {
+    const item = await getItemById(itemId);
+
+    if (!item) throw Error('An item with that ID does not exist.');
+    if (Number(item.userId) !== userId) throw Error('You do not have permission to access that data.');
+
+    res.send(item);
   } catch ({ name, message }) {
     next({ name, message });
   };

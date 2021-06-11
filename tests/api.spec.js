@@ -354,6 +354,7 @@ describe('API', () => {
     let testUserItems = null;
     let seedUserItems = null;
     let itemToCreateAndUpdate = null;
+    let itemToCreateAndUpdateId = null;
     let seedToken = null;
     beforeAll(async () => {
       const { data: test } = await axios.post(`${API_URL}/api/users/login`, { email: 'johnsnow@thewall.com', password: 'Ilovewolves900' });
@@ -403,6 +404,7 @@ describe('API', () => {
       beforeAll(async () => {
         const { data: newItem } = await axios.post(`${API_URL}/api/items`, allFields, { headers: {'Authorization': `Bearer ${token}`}});
         itemToCreateAndUpdate = newItem;
+        itemToCreateAndUpdateId = newItem.id;
         const { data: newItem2 } = await axios.post(`${API_URL}/api/items`, someFields, { headers: {'Authorization': `Bearer ${token}`}});
         secondItem = newItem2;
       });
@@ -425,6 +427,29 @@ describe('API', () => {
       });
     });
 
-    
+    describe('GET /items/:itemId', () => {
+      it ('Retrieves the correct item', async () => {
+        const { data: item } = await axios.get(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} });
+        expect(item.id).toBe(itemToCreateAndUpdateId);
+      });
+
+      it ('Throws an error if the itemId does not exist', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/items/0`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it ('Throws an error if the user tries to access an itemId that is not theirs', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/items/3`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+
+
+      it ('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.get(`${API_URL}/api/items/${itemToCreateAndUpdateId}`)).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+
   });
 });
