@@ -46,4 +46,7 @@ apiRouter.use('/health', healthRouter);
 const usersRouter = require('./routers/users');
 apiRouter.use('/users', usersRouter);
 
+const storageLocationsRouter = require('./routers/storage_locations');
+apiRouter.use('/storage_locations', storageLocationsRouter);
+
 module.exports = apiRouter;
