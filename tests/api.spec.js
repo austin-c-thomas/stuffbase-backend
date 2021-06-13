@@ -611,38 +611,38 @@ describe('API', () => {
         });
       });
   
-      // describe('PATCH /items/:itemId', () => {
-      //   const updateData = { name: `Ole' Trusty`, description: 'Long sword' };
-      //   let updatedItem = null;
-      //   beforeAll(async () => {
-      //     const { data } = await axios.patch(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, updateData, { headers: {'Authorization': `Bearer ${token}`} });
-      //     updatedItem = data;
-      //   });
+      describe('PATCH /items/:itemId', () => {
+        const updateData = { label: `Iron Chest`, description: 'For valuable items' };
+        let updatedBox = null;
+        beforeAll(async () => {
+          const { data } = await axios.patch(`${API_URL}/api/boxes/${boxToCreateAndUpdateId}`, updateData, { headers: {'Authorization': `Bearer ${token}`} });
+          updatedBox = data;
+        });
         
-      //   it ('Updates the correct item', () => {
-      //     expect(updatedItem.id).toBe(itemToCreateAndUpdateId);
-      //   });
+        it ('Updates the correct item', () => {
+          expect(updatedBox.id).toBe(boxToCreateAndUpdateId);
+        });
   
-      //   it ('Updates the fields passed in the request', () => {
-      //     expect(updatedItem.name).toBe(updateData.name);
-      //     expect(updatedItem.description).toBe(updateData.description);
-      //   });
+        it ('Updates the fields passed in the request', () => {
+          expect(updatedBox.label).toBe(updateData.label);
+          expect(updatedBox.description).toBe(updateData.description);
+        });
   
-      //   it ('Throws an error if nothing is supplied in the request body', async () => {
-      //     expect.assertions(1);
-      //     await expect(axios.patch(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
-      //   });
+        it ('Throws an error if nothing is supplied in the request body', async () => {
+          expect.assertions(1);
+          await expect(axios.patch(`${API_URL}/api/boxes/${boxToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+        });
   
-      //   it ('Throws an error if the user tries to update an itemId that is not theirs', async () => {
-      //     expect.assertions(1);
-      //     await expect(axios.patch(`${API_URL}/api/items/1`, updateData, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
-      //   });
+        it ('Throws an error if the user tries to update a boxId that is not theirs', async () => {
+          expect.assertions(1);
+          await expect(axios.patch(`${API_URL}/api/boxes/1`, updateData, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+        });
   
-      //   it ('Throws an error if the request is made without a token', async () => {
-      //     expect.assertions(1);
-      //     await expect(axios.patch(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, updateData)).rejects.toEqual(Error('Request failed with status code 500'));
-      //   });
-      // });
+        it ('Throws an error if the request is made without a token', async () => {
+          expect.assertions(1);
+          await expect(axios.patch(`${API_URL}/api/boxes/${boxToCreateAndUpdateId}`, updateData)).rejects.toEqual(Error('Request failed with status code 500'));
+        });
+      });
   
       // describe('DELETE /items/:itemId', () => {
       //   let deletedItem = null;

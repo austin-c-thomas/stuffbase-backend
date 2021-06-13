@@ -83,7 +83,8 @@ itemsRouter.patch('/:itemId', requireUser, async (req, res, next) => {
     
     const updateFields = {...req.body, id: itemId};
     const updatedItem = await updateItem(updateFields);
-    if (!updateFields) throw Error('The database experienced an error while trying to process your request.');
+    if (!updatedItem) throw Error('The database experienced an error while trying to process your request.');
+    
     res.send(updatedItem);
   } catch ({ name, message }) {
     next({ name, message });
