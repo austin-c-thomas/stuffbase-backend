@@ -589,27 +589,27 @@ describe('API', () => {
         });
       });
   
-      // describe('GET /items/:itemId', () => {
-      //   it ('Retrieves the correct item', async () => {
-      //     const { data: item } = await axios.get(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} });
-      //     expect(item.id).toBe(itemToCreateAndUpdateId);
-      //   });
+      describe('GET /boxes/:boxId', () => {
+        it ('Retrieves the correct box', async () => {
+          const { data: box } = await axios.get(`${API_URL}/api/boxes/${boxToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} });
+          expect(box.id).toBe(boxToCreateAndUpdateId);
+        });
   
-      //   it ('Throws an error if the itemId does not exist', async () => {
-      //     expect.assertions(1);
-      //     await expect(axios.get(`${API_URL}/api/items/0`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
-      //   });
+        it ('Throws an error if the boxId does not exist', async () => {
+          expect.assertions(1);
+          await expect(axios.get(`${API_URL}/api/boxes/0`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+        });
   
-      //   it ('Throws an error if the user tries to access an itemId that is not theirs', async () => {
-      //     expect.assertions(1);
-      //     await expect(axios.get(`${API_URL}/api/items/3`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
-      //   });
+        it ('Throws an error if the user tries to access an boxId that is not theirs', async () => {
+          expect.assertions(1);
+          await expect(axios.get(`${API_URL}/api/boxes/1`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+        });
   
-      //   it ('Throws an error if the request is made without a token', async () => {
-      //     expect.assertions(1);
-      //     await expect(axios.get(`${API_URL}/api/items/${itemToCreateAndUpdateId}`)).rejects.toEqual(Error('Request failed with status code 500'));
-      //   });
-      // });
+        it ('Throws an error if the request is made without a token', async () => {
+          expect.assertions(1);
+          await expect(axios.get(`${API_URL}/api/boxes/${boxToCreateAndUpdateId}`)).rejects.toEqual(Error('Request failed with status code 500'));
+        });
+      });
   
       // describe('PATCH /items/:itemId', () => {
       //   const updateData = { name: `Ole' Trusty`, description: 'Long sword' };

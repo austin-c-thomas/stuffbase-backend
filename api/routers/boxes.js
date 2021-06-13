@@ -9,6 +9,7 @@ const {
 const { 
   getBoxesByUserId, 
   createBox,
+  getBoxById,
 } = require('../../db');
 
 boxesRouter.use((req, res, next) => {
@@ -36,6 +37,20 @@ boxesRouter.post('/', requireUser, requireParams({ required: ['label', 'location
     const newBox = await createBox(boxData);
     if (!newBox) throw Error('The database experienced an error while trying to process your request.');
     res.send(newBox);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+boxesRouter.get('/:boxId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const boxId = Number(req.params.boxId);
+  try {
+    const box = await getBoxById(boxId);
+    if (!box) throw Error('A box with that ID does not exist.');
+    if (Number(box.userId) !== userId) throw Error('You do not have permission to access that data.');
+
+    res.send(box);
   } catch ({ name, message }) {
     next({ name, message });
   };
