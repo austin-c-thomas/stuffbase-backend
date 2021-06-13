@@ -8,6 +8,7 @@ const {
   getStorageLocationsByUserId,
   getStorageLocationById,
   getItemById,
+  getBoxById,
 } = require('../db');
 require('dotenv').config();
 const client = require('../db/client');
@@ -644,28 +645,34 @@ describe('API', () => {
         });
       });
   
-      // describe('DELETE /items/:itemId', () => {
-      //   let deletedItem = null;
-      //   beforeAll(async () => {
-      //     const { data: item} = await axios.delete(`${API_URL}/api/items/${itemToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} })
-      //     deletedItem = item;
-      //   });
+      describe('DELETE /boxes/:boxId', () => {
+        let deletedBox = null;
+        beforeAll(async () => {
+          const { data: box} = await axios.delete(`${API_URL}/api/boxes/${boxToCreateAndUpdateId}`, { headers: {'Authorization': `Bearer ${token}`} })
+          deletedBox = box;
+        });
   
-      //   it('Removes the item from the db', async () => {
-      //     expect.assertions(2);
-      //     expect(deletedItem).toBeDefined();
-      //     await expect(getItemById(deletedItem.id)).rejects.toEqual(Error('There is no item with that ID.'));
-      //   });
+        it('Removes the box from the db', async () => {
+          expect.assertions(2);
+          expect(deletedBox).toBeDefined();
+          await expect(getBoxById(deletedBox.id)).rejects.toEqual(Error('There is no box with that ID.'));
+        });
   
-      //   it ('Throws an error if the user tries to delete a itemId that is not theirs', async () => {
-      //     expect.assertions(1);
-      //     await expect(axios.delete(`${API_URL}/api/items/1`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
-      //   });
+        it ('Throws an error if the user tries to delete a boxId that is not theirs', async () => {
+          expect.assertions(1);
+          await expect(axios.delete(`${API_URL}/api/boxes/1`, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+        });
   
-      //   it ('Throws an error if the request is made without a token', async () => {
-      //     expect.assertions(1);
-      //     await expect(axios.delete(`${API_URL}/api/items/1`)).rejects.toEqual(Error('Request failed with status code 500'));
-      //   });
-      // });
+        it ('Throws an error if the request is made without a token', async () => {
+          expect.assertions(1);
+          await expect(axios.delete(`${API_URL}/api/boxes/1`)).rejects.toEqual(Error('Request failed with status code 500'));
+        });
+
+        it ('Deletes box_item relationships if there were items in the deleted box', async () => {
+          const { data: deletedBoxWithItems } = await axios.delete(`${API_URL}/api/boxes/1`, { headers: {'Authorization': `Bearer ${seedToken}`} });
+          const { rows: boxItems } = await client.query(`SELECT * FROM box_items WHERE "boxId"=$1;`, [1]);
+          expect(boxItems).toEqual([]); 
+        });
+      });
     });
 });
