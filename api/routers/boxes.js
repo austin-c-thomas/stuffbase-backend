@@ -11,6 +11,7 @@ const {
   createBox,
   getBoxById,
   updateBox,
+  destroyBox,
 } = require('../../db');
 
 boxesRouter.use((req, res, next) => {
@@ -79,6 +80,23 @@ boxesRouter.patch('/:boxId', requireUser, async (req, res, next) => {
     if (!updatedBox) throw Error('The database experienced an error while trying to process your request.');
     
     res.send(updatedBox);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
+
+boxesRouter.delete('/:boxId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const boxId = Number(req.params.boxId);
+  try {
+    // Check that the box belongs to the user making the request
+    const boxToDelete = await getBoxById(boxId);
+    if (Number(boxToDelete.userId) !== userId) throw Error('You do not have permission to access that data.');
+
+    // Delete the box
+    const deletedBox = await destroyBox(boxId);
+    if (!deletedBox) throw Error('The database experienced an error while trying to process your request.');
+    res.send(deletedBox);
   } catch ({ name, message }) {
     next({ name, message });
   };
