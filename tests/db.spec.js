@@ -391,7 +391,7 @@ describe('Database', () => {
     describe('destroyItem', () => {
       let deletedItem = null;
       beforeAll(async () => {
-        deletedItem = await destroyItem(itemToCreateAndDestroy);
+        deletedItem = await destroyItem(itemToCreateAndDestroy.id);
       });
 
       it('Returns the correct destroyed item', () => {
@@ -540,7 +540,7 @@ describe('Database', () => {
     describe('destroyBox', () => {
       let deletedBox = null;
       beforeAll(async () => {
-        deletedBox = await destroyBox(boxToCreateAndDestroy);
+        deletedBox = await destroyBox(boxToCreateAndDestroy.id);
       });
 
       it('Returns the correct destroyed box', () => {
@@ -654,7 +654,7 @@ describe('Database', () => {
     describe('deleteBoxItem', () => {
       it('Removes the box-item relationship from the db', async () => {
         expect.assertions(3);
-        const deletedBoxItem = await destroyBoxItem(newBoxItem);
+        const deletedBoxItem = await destroyBoxItem(newBoxItem.itemId);
         expect(deletedBoxItem.itemId).toBe(newBoxItem.itemId);
         expect(deletedBoxItem.boxId).toBe(3);
         await expect(getBoxItemByItemId(deletedBoxItem.itemId)).rejects.toEqual(Error('That item is not in a box.'));

@@ -24,7 +24,7 @@ itemsRouter.get('/', requireUser, async (req, res, next) => {
   const userId = Number(req.user.id);
   try {
     const userItems = await getItemsByUserId(userId);
-    if (!userItems) next(generateError('DatabaseError'));
+    if (!userItems) throw Error('The database experienced an error while trying to process your request.');
 
     res.send(userItems);
   } catch ({ name, message }) {
@@ -42,7 +42,7 @@ itemsRouter.post('/', requireUser, requireParams({ required: ['name', 'locationI
   const itemData = {...req.body, quantity: quantity, locationId: locationId, userId: userId};
   try {
     const newItem = await createItem(itemData);
-    if (!newItem) next(generateError('DatabaseError'));
+    if (!newItem) throw Error('The database experienced an error while trying to process your request.');
     res.send(newItem);
   } catch ({ name, message }) {
     next({ name, message });
@@ -83,7 +83,8 @@ itemsRouter.patch('/:itemId', requireUser, async (req, res, next) => {
     
     const updateFields = {...req.body, id: itemId};
     const updatedItem = await updateItem(updateFields);
-    if (!updateFields) throw Error('The database experienced an error while trying to process your request.');
+    if (!updatedItem) throw Error('The database experienced an error while trying to process your request.');
+    
     res.send(updatedItem);
   } catch ({ name, message }) {
     next({ name, message });
@@ -99,7 +100,6 @@ itemsRouter.delete('/:itemId', requireUser, async (req, res, next) => {
     if (Number(itemToDelete.userId) !== userId) throw Error('You do not have permission to access that data.');
 
     // Delete the item
-    console.log(itemToDelete);
     const deletedItem = await destroyItem(itemId);
     if (!deletedItem) throw Error('The database experienced an error while trying to process your request.');
     res.send(deletedItem);

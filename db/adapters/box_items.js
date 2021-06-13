@@ -95,7 +95,7 @@ const updateBoxItem = async ({ itemId, boxId }) => {
   };
 };
 
-const destroyBoxItem = async ({ itemId }) => {
+const destroyBoxItem = async (itemId) => {
   try {
     const { rows: [deletedBoxItem] } = await client.query(`
       DELETE FROM box_items

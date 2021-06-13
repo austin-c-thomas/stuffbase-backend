@@ -131,8 +131,14 @@ const updateBox = async (box) => {
   };
 };
 
-const destroyBox = async ({ id }) => {
+const destroyBox = async (id) => {
   try {
+    // If the box has items in it, delete those box items.
+    await client.query(`
+      DELETE FROM box_items
+      WHERE "boxId"=$1;
+    `, [id]);
+
     const { rows: [deletedBox] } = await client.query(`
       DELETE FROM boxes
       WHERE "id"=$1
