@@ -52,4 +52,7 @@ apiRouter.use('/storage_locations', storageLocationsRouter);
 const itemsRouter = require('./routers/items');
 apiRouter.use('/items', itemsRouter);
 
+const boxesRouter = require('./routers/boxes');
+apiRouter.use('/boxes', boxesRouter);
+
 module.exports = apiRouter;
