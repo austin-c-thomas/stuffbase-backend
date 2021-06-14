@@ -686,6 +686,8 @@ describe('API', () => {
     let itemToBoxAndMove = null;
     let originalItemLocation = null;
     let token;
+    let newBoxItem = null;      
+    let boxLocation = null;
     beforeAll(async () => {
       const { data: user } = await axios.post(`${API_URL}/api/users/login`, { email: 'testuser@test.com', password: 'iLoveStuffBase1' });
       token = user.token;
@@ -694,9 +696,6 @@ describe('API', () => {
     });
 
     describe('POST /box_items', () => {
-      let newBoxItem = null;
-      let boxLocation = null;
-
       beforeAll(async () => {
         const firstBox = await getBoxById(firstBoxId);
         boxLocation = firstBox.locationId;
@@ -732,6 +731,47 @@ describe('API', () => {
       it('Throws an error if the request is made without a token', async () => {
         expect.assertions(1);
         await expect(axios.post(`${API_URL}/api/box_items`, { itemId: 1, boxId: 1 })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+    });
+
+    describe('PATCH /box_items/:itemId', () => {
+      const updatedBoxItemData = { boxId: secondBoxId };
+      let updatedBoxItem = null;
+      beforeAll(async () => {
+        const { data: updated } = await axios.patch(`${API_URL}/api/box_items/${itemToBoxAndMoveId}`, updatedBoxItemData, { headers: {'Authorization': `Bearer ${token}`} });
+        updatedBoxItem = updated;
+      });
+
+      it('Updates the boxId of the box_item', () => {
+        expect(updatedBoxItem.boxId).not.toBe(newBoxItem.boxId);
+        expect(updatedBoxItem.boxId).toBe(updatedBoxItemData.boxId);
+      });
+
+      it('Updates the locationId of the item if the new box is in a different location', async () => {
+        const newBox = await getBoxById(secondBoxId);
+        const newBoxLocation = newBox.locationId;
+        const movedItem = await getItemById(itemToBoxAndMoveId);
+        expect(movedItem.locationId).not.toBe(boxLocation);
+        expect(movedItem.locationId).toBe(newBoxLocation);
+      });
+
+      it(`Does not allow a box item to be updated with another user's box or item`, async () => {
+        expect.assertions(2);
+        const notMyBox = { boxId: 9 };
+        const notMyItem = { boxId: 5 };
+        await expect(axios.patch(`${API_URL}/api/box_items/${itemToBoxAndMoveId}`, notMyBox, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+        await expect(axios.patch(`${API_URL}/api/box_items/20`, notMyItem, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it('Throws an error if the request is made with a missing field', async () => {
+        const missingField = { itemId: 1 };
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/box_items/${itemToBoxAndMoveId}`, missingField, { headers: {'Authorization': `Bearer ${token}`} })).rejects.toEqual(Error('Request failed with status code 500'));
+      });
+
+      it('Throws an error if the request is made without a token', async () => {
+        expect.assertions(1);
+        await expect(axios.patch(`${API_URL}/api/box_items/${itemToBoxAndMoveId}`, { itemId: 1, boxId: 1 })).rejects.toEqual(Error('Request failed with status code 500'));
       });
     });
   });
