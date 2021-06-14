@@ -5,7 +5,8 @@ const {
   createBoxItem, 
   getItemById, 
   getBoxById, 
-  updateBoxItem 
+  updateBoxItem, 
+  destroyBoxItem
 } = require('../../db');
 
 const { 
@@ -47,7 +48,19 @@ boxItemsRouter.patch('/:itemId', requireUser, requireParams({ required: ['boxId'
   };
 });
 
-// boxItemsRouter.delete('/:itemId')
+boxItemsRouter.delete('/:itemId', requireUser, async (req, res, next) => {
+  const userId = Number(req.user.id);
+  const itemId = Number(req.params.itemId);
+  try {
+    const item = await getItemById(itemId);
+    if (Number(item.userId) !== userId) throw Error('You do not have permission to access that data.');
+    const deletedBoxItem = await destroyBoxItem(itemId);
+    if (!deletedBoxItem) throw Error('The database experienced an error while trying to process your request.');
+    res.send(deletedBoxItem);
+  } catch ({ name, message }) {
+    next({ name, message });
+  };
+});
 
 
 module.exports = boxItemsRouter;
