@@ -55,4 +55,7 @@ apiRouter.use('/items', itemsRouter);
 const boxesRouter = require('./routers/boxes');
 apiRouter.use('/boxes', boxesRouter);
 
+const boxItemsRouter = require('./routers/box_items');
+apiRouter.use('/box_items', boxItemsRouter);
+
 module.exports = apiRouter;
