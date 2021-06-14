@@ -34,7 +34,6 @@ const getBoxesByUserId = async (userId) => {
       LEFT JOIN items on items.id = box_items."itemId"
       WHERE boxes."userId"=$1;
     `, [userId]);
-
     const boxes = reduceBoxes(boxData);
     return boxes;
   } catch (error) {
@@ -42,6 +41,7 @@ const getBoxesByUserId = async (userId) => {
   };
 };
 
+// ** Implement a JOIN here later rather than 2 queries?
 const getBoxById = async (id) => {
   try {
     const { rows: [box] } = await client.query(`
@@ -54,8 +54,14 @@ const getBoxById = async (id) => {
       throw Error('There is no box with that ID.');
     };
 
-    // Add items to this returned box
+    const { rows: boxItems } = await client.query(`
+      SELECT box_items.*, items.*
+      FROM box_items
+      LEFT JOIN items ON items.id = box_items."itemId"
+      WHERE box_items."boxId"=$1;
+    `, [id]);
 
+    boxItems.length > 0 ? box.items = boxItems : box.items = [];
     return box;
   } catch (error) {
     throw error;
