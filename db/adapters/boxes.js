@@ -54,6 +54,8 @@ const getBoxById = async (id) => {
       throw Error('There is no box with that ID.');
     };
 
+    // Add items to this returned box
+
     return box;
   } catch (error) {
     throw error;

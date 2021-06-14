@@ -18,7 +18,7 @@ const {
 
 
 storageLocationsRouter.use((req, res, next) => {
-  console.log('A request is being made to /storage_locations')
+  console.log('A request is being made to /storage_locations...')
   next();
 });
 
